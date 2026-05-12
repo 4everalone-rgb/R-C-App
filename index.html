@@ -1216,7 +1216,7 @@
             color: var(--warning);
         }
     </style>
-    <base target="_blank">
+<base target="_blank">
 </head>
 
 <body>
@@ -1566,7 +1566,7 @@
         // ============================================
         // 📦 GOOGLE APPS SCRIPT CONFIG
         // ============================================
-        const GAS_URL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbw89wEfwpSsLi5jGvAgksgJFFEffrnQpQ3miUB_twrdk8OFo9VQT33NYNArcXPG7q16/exec';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzyWZBL6dXqFSvyAkYBtTnxjgvFtJQEG220EznwkQ9kO_cG5KX0UO54o8r_mbnq5Y70/exec';
         // ============================================
         // 📦 DATA VARIABLES
         // ============================================
@@ -1783,7 +1783,6 @@
             checkAllDataLoaded();
         });
 
-        // Ensure all default utilities exist (re-create if any are missing)
         db.ref('utilities').once('value').then((snapshot) => {
             const updates = {};
             let needsUpdate = false;
@@ -1909,7 +1908,7 @@
             else if (currentTaskFilter === 'completed') filtered = tasks.filter(t => t.completed);
             else if (currentTaskFilter === 'Josua' || currentTaskFilter === 'Reino') filtered = tasks.filter(t => t.assignee === currentTaskFilter);
 
-            // Sort: active first, then by priority (P1 highest), then by date
+            // Sort: active first, then by priority (P1 highest), then by date (newest first)
             filtered.sort((a, b) => {
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
                 if (a.priority !== b.priority) return a.priority - b.priority;
@@ -1935,11 +1934,10 @@
                     <div class="task-checkbox" onclick="event.stopPropagation(); toggleTask('${t.id}')"></div>
                     <div class="priority-${t.priority} task-priority"></div>
                     <div class="task-content">
-                        <div class="task-text" style="${t.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${escapeHtml(t.text)}</div>
+                        <div class="task-text">${escapeHtml(t.text)}</div>
                         <div class="task-meta">
                             <span class="task-tag ${tags[t.category] || 'tag-office'}">${t.category}</span>
                             <span class="task-assignee">👤 ${t.assignee}</span>
-                            ${t.completed ? '<span style="font-size:11px;color:var(--success);">✓ Done</span>' : ''}
                         </div>
                     </div>
                     <div class="task-delete" onclick="event.stopPropagation(); deleteTask('${t.id}')">🗑️</div>
@@ -1968,11 +1966,6 @@
         }
 
         function deleteTask(id) {
-            const task = tasks.find(t => t.id === id);
-            if (!task) return;
-
-            if (!confirm(`Delete task: "${task.text}"?`)) return;
-
             const el = document.getElementById(`task-${id}`);
             if (el) {
                 el.classList.add('removing');
