@@ -359,12 +359,24 @@
         }
 
         .task-item.completed {
-            opacity: 0.6;
+            opacity: 0.5;
         }
 
         .task-item.completed .task-text {
             text-decoration: line-through;
             color: var(--text-light);
+        }
+
+        .task-item.completed .task-checkbox {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .task-item.completed .task-checkbox::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
         }
 
         .task-item.removing {
@@ -1216,7 +1228,7 @@
             color: var(--warning);
         }
     </style>
-<base target="_blank">
+    <base target="_blank">
 </head>
 
 <body>
@@ -1365,8 +1377,11 @@
         <div class="card">
             <div class="card-title">Office Utilities</div>
             <p style="font-size: 14px; color: var(--text-light); margin-bottom: 16px;">Tap an item to update its status.
-                Critical items pulse red.</p>
+                Critical items pulse red. If items are missing, click Restore Defaults below.</p>
             <div class="utility-grid" id="utilityGrid"></div>
+            <button class="btn btn-small"
+                style="margin-top: 16px; background: var(--primary-light); color: white; width: auto; padding: 10px 20px; font-size: 13px;"
+                onclick="forceRestoreUtilities()">🔄 Restore Default Utilities</button>
         </div>
 
         <div class="card">
@@ -1783,21 +1798,36 @@
             checkAllDataLoaded();
         });
 
-        db.ref('utilities').once('value').then((snapshot) => {
+        // FORCE restore utilities - works even if some are missing
+        function forceRestoreUtilities() {
             const updates = {};
-            let needsUpdate = false;
-
             defaultUtilities.forEach(u => {
-                if (!snapshot.hasChild(u.id)) {
-                    updates[u.id] = u;
-                    needsUpdate = true;
-                }
+                updates[u.id] = {
+                    id: u.id,
+                    name: u.name,
+                    icon: u.icon,
+                    status: 'ok',
+                    lastCheck: new Date().toISOString(),
+                    lastBy: 'System'
+                };
             });
+            db.ref('utilities').set(updates)
+                .then(() => {
+                    console.log('✅ Utilities restored');
+                    alert('Utilities restored! Toilet Paper, Cleaning Supplies, and Electricity are back.');
+                })
+                .catch(err => {
+                    console.error('❌ Failed to restore utilities:', err);
+                    alert('Failed to restore utilities. Check Firebase rules: .read=true, .write=true');
+                });
+        }
 
-            if (needsUpdate) {
-                return db.ref('utilities').update(updates);
+        // Auto-restore on first load
+        db.ref('utilities').once('value').then((snapshot) => {
+            if (!snapshot.exists() || snapshot.numChildren() < 3) {
+                forceRestoreUtilities();
             }
-        }).catch(err => console.error('Failed to init utilities:', err));
+        }).catch(err => console.error('Failed to check utilities:', err));
 
         setTimeout(() => {
             const overlay = document.getElementById('loadingOverlay');
@@ -1908,7 +1938,7 @@
             else if (currentTaskFilter === 'completed') filtered = tasks.filter(t => t.completed);
             else if (currentTaskFilter === 'Josua' || currentTaskFilter === 'Reino') filtered = tasks.filter(t => t.assignee === currentTaskFilter);
 
-            // Sort: active first, then by priority (P1 highest), then by date (newest first)
+            // Sort: active first, then by priority (P1 highest), then by date
             filtered.sort((a, b) => {
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
                 if (a.priority !== b.priority) return a.priority - b.priority;
