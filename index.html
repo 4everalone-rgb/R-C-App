@@ -1764,12 +1764,10 @@
             if (snapshot.exists()) {
                 snapshot.forEach((child) => {
                     const task = child.val();
-                    // Ensure task has an id (use Firebase key as fallback)
                     if (!task.id) task.id = child.key;
                     tasks.push(task);
                 });
             }
-            // Sort: active first, then by priority (lower number = higher priority), then newest first
             tasks.sort((a, b) => {
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
                 const pa = parseInt(a.priority) || 4;
@@ -1803,7 +1801,6 @@
             }
             console.log('[SYNC] Utilities loaded:', utilities.length, 'items. IDs:', foundIds.join(', ') || 'none');
 
-            // Auto-restore any missing default utilities (merge, don't overwrite)
             const missing = defaultUtilities.filter(def => !foundIds.includes(def.id));
             if (missing.length > 0) {
                 console.log('[SYNC] Auto-restoring missing utilities:', missing.map(m => m.id).join(', '));
@@ -1852,7 +1849,6 @@
         function forceRestoreUtilities() {
             const updates = {};
             defaultUtilities.forEach(u => {
-                // Only restore if this utility doesn't already exist in Firebase
                 const existing = utilities.find(existing => existing.id === u.id);
                 if (!existing) {
                     updates[u.id] = {
@@ -1873,17 +1869,15 @@
 
             db.ref('utilities').update(updates)
                 .then(() => {
-                    console.log('✅ Utilities restored:', Object.keys(updates).join(', '));
+                    console.log('Utilities restored:', Object.keys(updates).join(', '));
                     alert('Restored: ' + Object.keys(updates).join(', ') + '. They should appear shortly.');
                 })
                 .catch(err => {
-                    console.error('❌ Failed to restore utilities:', err);
-                    alert('Failed to restore utilities. Check Firebase rules: .read=true, .write=true
-Error: ' + err.message);
+                    console.error('Failed to restore utilities:', err);
+                    alert('Failed to restore utilities. Check Firebase rules: .read=true, .write=true\nError: ' + err.message);
                 });
         }
 
-        // Debug helper - run in console: debugFirebase()
         window.debugFirebase = function() {
             console.log('=== FIREBASE DEBUG ===');
             db.ref('utilities').once('value').then(s => {
@@ -2005,7 +1999,7 @@ Error: ' + err.message);
             safeWrite('tasks/' + id, task).then(() => {
                 document.getElementById('taskInput').value = '';
                 console.log('[TASK] Task saved successfully. Key:', id);
-            }).catch((err) => { 
+            }).catch((err) => {
                 console.error('[TASK] Failed to save task:', err);
             });
         }
@@ -2019,10 +2013,8 @@ Error: ' + err.message);
             else if (currentTaskFilter === 'completed') filtered = tasks.filter(t => t.completed);
             else if (currentTaskFilter === 'Josua' || currentTaskFilter === 'Reino') filtered = tasks.filter(t => t.assignee === currentTaskFilter);
 
-            // Filter out any tasks without valid IDs (corrupted data)
             filtered = filtered.filter(t => t && t.id);
 
-            // Sort: active first, then by priority (P1 highest), then by date
             filtered.sort((a, b) => {
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
                 const pa = parseInt(a.priority) || 4;
@@ -2077,14 +2069,14 @@ Error: ' + err.message);
                 completedAt: newCompleted ? new Date().toISOString() : null
             };
 
+            console.log('[TASK] Toggling task:', id, 'completed:', newCompleted);
             safeUpdate('tasks/' + id, updates).then(() => {
-                console.log('[TASK] Toggled task:', id, 'completed:', newCompleted);
                 const el = document.getElementById(`task-${id}`);
                 if (el && currentTaskFilter !== 'all') {
                     el.classList.add('removing');
                     setTimeout(() => el.style.display = 'none', 300);
                 }
-            }).catch((err) => { 
+            }).catch((err) => {
                 console.error('[TASK] Failed to toggle task:', err);
             });
         }
@@ -2161,7 +2153,7 @@ Error: ' + err.message);
             console.log('[UTIL] Cycling', id, 'from', u.status, 'to', newStatus);
             safeUpdate('utilities/' + id, updates).then(() => {
                 console.log('[UTIL] Updated', id, 'to', newStatus);
-            }).catch((err) => { 
+            }).catch((err) => {
                 console.error('[UTIL] Failed to update utility:', err);
             });
         }
