@@ -1229,6 +1229,7 @@
         }
     </style>
     <base target="_blank">
+<base target="_blank">
 </head>
 
 <body>
@@ -1760,12 +1761,29 @@
 
         db.ref('tasks').on('value', (snapshot) => {
             tasks = [];
-            snapshot.forEach((child) => tasks.push(child.val()));
-            tasks.sort((a, b) => b.id - a.id);
+            if (snapshot.exists()) {
+                snapshot.forEach((child) => {
+                    const task = child.val();
+                    // Ensure task has an id (use Firebase key as fallback)
+                    if (!task.id) task.id = child.key;
+                    tasks.push(task);
+                });
+            }
+            // Sort: active first, then by priority (lower number = higher priority), then newest first
+            tasks.sort((a, b) => {
+                if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                const pa = parseInt(a.priority) || 4;
+                const pb = parseInt(b.priority) || 4;
+                if (pa !== pb) return pa - pb;
+                const da = a.created ? new Date(a.created) : new Date(0);
+                const db = b.created ? new Date(b.created) : new Date(0);
+                return db - da;
+            });
             dataLoaded.tasks = true;
             renderTasks();
             checkAllDataLoaded();
             showSyncPulse();
+            console.log('[SYNC] Tasks loaded:', tasks.length, 'items');
         }, (error) => {
             console.error('Tasks listener error:', error);
             dataLoaded.tasks = true;
@@ -1774,7 +1792,39 @@
 
         db.ref('utilities').on('value', (snapshot) => {
             utilities = [];
-            if (snapshot.exists()) snapshot.forEach((child) => utilities.push(child.val()));
+            let foundIds = [];
+            if (snapshot.exists()) {
+                snapshot.forEach((child) => {
+                    const u = child.val();
+                    if (!u.id) u.id = child.key;
+                    utilities.push(u);
+                    foundIds.push(u.id || child.key);
+                });
+            }
+            console.log('[SYNC] Utilities loaded:', utilities.length, 'items. IDs:', foundIds.join(', ') || 'none');
+
+            // Auto-restore any missing default utilities (merge, don't overwrite)
+            const missing = defaultUtilities.filter(def => !foundIds.includes(def.id));
+            if (missing.length > 0) {
+                console.log('[SYNC] Auto-restoring missing utilities:', missing.map(m => m.id).join(', '));
+                const updates = {};
+                missing.forEach(u => {
+                    updates[u.id] = {
+                        id: u.id,
+                        name: u.name,
+                        icon: u.icon,
+                        status: 'ok',
+                        lastCheck: new Date().toISOString(),
+                        lastBy: 'System'
+                    };
+                });
+                db.ref('utilities').update(updates).then(() => {
+                    console.log('[SYNC] Missing utilities restored');
+                }).catch(err => {
+                    console.error('[SYNC] Failed to restore utilities:', err);
+                });
+            }
+
             dataLoaded.utilities = true;
             renderUtilities();
             checkAllDataLoaded();
@@ -1798,44 +1848,71 @@
             checkAllDataLoaded();
         });
 
-        // FORCE restore utilities - works even if some are missing
+        // FORCE restore utilities - merges with existing, preserves current status
         function forceRestoreUtilities() {
             const updates = {};
             defaultUtilities.forEach(u => {
-                updates[u.id] = {
-                    id: u.id,
-                    name: u.name,
-                    icon: u.icon,
-                    status: 'ok',
-                    lastCheck: new Date().toISOString(),
-                    lastBy: 'System'
-                };
+                // Only restore if this utility doesn't already exist in Firebase
+                const existing = utilities.find(existing => existing.id === u.id);
+                if (!existing) {
+                    updates[u.id] = {
+                        id: u.id,
+                        name: u.name,
+                        icon: u.icon,
+                        status: 'ok',
+                        lastCheck: new Date().toISOString(),
+                        lastBy: 'System'
+                    };
+                }
             });
-            db.ref('utilities').set(updates)
+
+            if (Object.keys(updates).length === 0) {
+                alert('All utilities already exist! If you still see missing items, check the console for errors.');
+                return;
+            }
+
+            db.ref('utilities').update(updates)
                 .then(() => {
-                    console.log('✅ Utilities restored');
-                    alert('Utilities restored! Toilet Paper, Cleaning Supplies, and Electricity are back.');
+                    console.log('✅ Utilities restored:', Object.keys(updates).join(', '));
+                    alert('Restored: ' + Object.keys(updates).join(', ') + '. They should appear shortly.');
                 })
                 .catch(err => {
                     console.error('❌ Failed to restore utilities:', err);
-                    alert('Failed to restore utilities. Check Firebase rules: .read=true, .write=true');
+                    alert('Failed to restore utilities. Check Firebase rules: .read=true, .write=true
+Error: ' + err.message);
                 });
         }
 
-        // Auto-restore on first load
-        db.ref('utilities').once('value').then((snapshot) => {
-            if (!snapshot.exists() || snapshot.numChildren() < 3) {
-                forceRestoreUtilities();
-            }
-        }).catch(err => console.error('Failed to check utilities:', err));
+        // Debug helper - run in console: debugFirebase()
+        window.debugFirebase = function() {
+            console.log('=== FIREBASE DEBUG ===');
+            db.ref('utilities').once('value').then(s => {
+                console.log('Utilities raw:', s.val());
+                console.log('Utilities children count:', s.numChildren());
+            });
+            db.ref('tasks').once('value').then(s => {
+                console.log('Tasks raw:', s.val());
+                console.log('Tasks children count:', s.numChildren());
+            });
+            db.ref('bookings').once('value').then(s => {
+                console.log('Bookings children count:', s.numChildren());
+            });
+            db.ref('stock').once('value').then(s => {
+                console.log('Stock children count:', s.numChildren());
+            });
+            console.log('Current utilities array:', utilities);
+            console.log('Current tasks array:', tasks);
+            console.log('======================');
+        };
 
+        // Force-hide loading overlay after max 8 seconds
         setTimeout(() => {
             const overlay = document.getElementById('loadingOverlay');
             if (overlay && overlay.style.display !== 'none') {
                 overlay.classList.add('fade-out');
                 setTimeout(() => overlay.style.display = 'none', 300);
             }
-        }, 10000);
+        }, 8000);
 
         // ============================================
         // 🚀 INITIALIZATION
@@ -1919,14 +1996,18 @@
                 text: text,
                 category: document.getElementById('taskCategory').value,
                 assignee: document.getElementById('taskAssignee').value,
-                priority: document.getElementById('taskPriority').value,
+                priority: parseInt(document.getElementById('taskPriority').value) || 3,
                 completed: false,
                 created: new Date().toISOString()
             };
 
+            console.log('[TASK] Adding task:', task);
             safeWrite('tasks/' + id, task).then(() => {
                 document.getElementById('taskInput').value = '';
-            }).catch(() => { });
+                console.log('[TASK] Task saved successfully. Key:', id);
+            }).catch((err) => { 
+                console.error('[TASK] Failed to save task:', err);
+            });
         }
 
         function renderTasks() {
@@ -1938,11 +2019,18 @@
             else if (currentTaskFilter === 'completed') filtered = tasks.filter(t => t.completed);
             else if (currentTaskFilter === 'Josua' || currentTaskFilter === 'Reino') filtered = tasks.filter(t => t.assignee === currentTaskFilter);
 
+            // Filter out any tasks without valid IDs (corrupted data)
+            filtered = filtered.filter(t => t && t.id);
+
             // Sort: active first, then by priority (P1 highest), then by date
             filtered.sort((a, b) => {
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
-                if (a.priority !== b.priority) return a.priority - b.priority;
-                return new Date(b.created) - new Date(a.created);
+                const pa = parseInt(a.priority) || 4;
+                const pb = parseInt(b.priority) || 4;
+                if (pa !== pb) return pa - pb;
+                const da = a.created ? new Date(a.created) : new Date(0);
+                const db = b.created ? new Date(b.created) : new Date(0);
+                return db - da;
             });
 
             if (filtered.length === 0) {
@@ -1978,7 +2066,10 @@
 
         function toggleTask(id) {
             const task = tasks.find(t => t.id === id);
-            if (!task) return;
+            if (!task) {
+                console.warn('[TASK] Task not found for toggle:', id);
+                return;
+            }
 
             const newCompleted = !task.completed;
             const updates = {
@@ -1987,12 +2078,15 @@
             };
 
             safeUpdate('tasks/' + id, updates).then(() => {
+                console.log('[TASK] Toggled task:', id, 'completed:', newCompleted);
                 const el = document.getElementById(`task-${id}`);
                 if (el && currentTaskFilter !== 'all') {
                     el.classList.add('removing');
                     setTimeout(() => el.style.display = 'none', 300);
                 }
-            }).catch(() => { });
+            }).catch((err) => { 
+                console.error('[TASK] Failed to toggle task:', err);
+            });
         }
 
         function deleteTask(id) {
@@ -2051,16 +2145,25 @@
 
         function cycleUtilityStatus(id) {
             const u = utilities.find(item => item.id === id);
-            if (!u) return;
+            if (!u) {
+                console.warn('[UTIL] Utility not found for cycle:', id);
+                return;
+            }
 
             const cycle = { ok: 'low', low: 'critical', critical: 'ok' };
+            const newStatus = cycle[u.status] || 'ok';
             const updates = {
-                status: cycle[u.status] || 'ok',
+                status: newStatus,
                 lastCheck: new Date().toISOString(),
                 lastBy: document.getElementById('techName').value || 'Staff'
             };
 
-            safeUpdate('utilities/' + id, updates).catch(() => { });
+            console.log('[UTIL] Cycling', id, 'from', u.status, 'to', newStatus);
+            safeUpdate('utilities/' + id, updates).then(() => {
+                console.log('[UTIL] Updated', id, 'to', newStatus);
+            }).catch((err) => { 
+                console.error('[UTIL] Failed to update utility:', err);
+            });
         }
 
         // ============================================
