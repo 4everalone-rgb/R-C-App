@@ -2303,30 +2303,41 @@
                     updateInvoiceStatus('syncing', 'Uploading invoice file...');
                     const file = fileInput.files[0];
 
+                    console.log('[UPLOAD] Starting upload for:', file.name, 'size:', file.size, 'type:', file.type);
+
                     const CLOUD_NAME = 'dpij51adw';
-                    const UPLOAD_PRESET = 'invoices_unsigned';
+                    const UPLOAD_PRESET = 'invocies_unsigned';
 
                     const formData = new FormData();
                     formData.append('file', file);
                     formData.append('upload_preset', UPLOAD_PRESET);
+
+                    console.log('[UPLOAD] Sending to Cloudinary...');
 
                     const cloudResponse = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
                         method: 'POST',
                         body: formData
                     });
 
+                    console.log('[UPLOAD] Response status:', cloudResponse.status);
+
                     const cloudData = await cloudResponse.json();
+                    console.log('[UPLOAD] Response data:', cloudData);
+
                     if (cloudData.secure_url) {
                         fileUrl = cloudData.secure_url;
-                        console.log('[INVOICE] Cloudinary upload:', fileUrl);
+                        console.log('[UPLOAD] SUCCESS:', fileUrl);
                     } else {
-                        console.error('[INVOICE] Cloudinary failed:', cloudData);
-                        alert('File upload failed: ' + (cloudData.error?.message || 'Unknown error'));
+                        console.error('[UPLOAD] FAILED:', cloudData);
+                        const errMsg = cloudData.error?.message || JSON.stringify(cloudData);
+                        alert('File upload failed: ' + errMsg);
                     }
                 } catch (uploadErr) {
-                    console.error('[INVOICE] File upload failed:', uploadErr);
-                    alert('File upload failed. Check your Cloudinary config.');
+                    console.error('[UPLOAD] CATCH ERROR:', uploadErr);
+                    alert('File upload failed: ' + uploadErr.message);
                 }
+            } else {
+                console.log('[UPLOAD] No file selected');
             }
 
             const payload = {
