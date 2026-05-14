@@ -2327,6 +2327,8 @@
                     const formData = new FormData();
                     formData.append('file', file);
                     formData.append('upload_preset', UPLOAD_PRESET);
+                    // Explicitly set type to 'upload' (public) instead of default which might be 'authenticated'
+                    formData.append('type', 'upload');
 
                     const uploadUrl = 'https://api.cloudinary.com/v1_1/' + CLOUD_NAME + '/' + resourceType + '/upload';
                     console.log('[UPLOAD] URL:', uploadUrl);
@@ -2345,10 +2347,21 @@
                         fileUrl = cloudData.secure_url;
                         console.log('[UPLOAD] SUCCESS:', fileUrl);
                         console.log('[UPLOAD] public_id:', cloudData.public_id);
+                        console.log('[UPLOAD] type:', cloudData.type);
                         console.log('[UPLOAD] format:', cloudData.format);
+
+                        // Test the URL immediately to catch 401s
+                        try {
+                            const testResp = await fetch(fileUrl, { method: 'HEAD', mode: 'no-cors' });
+                            console.log('[UPLOAD] Delivery test status:', testResp.status, testResp.type);
+                        } catch(e) {
+                            console.log('[UPLOAD] Delivery test (no-cors):', e.message);
+                        }
+
                         document.getElementById('invFilePreview').innerHTML = 
                             '<span style="color: var(--success);">✓ Uploaded: ' + file.name + '</span><br>' +
-                            '<a href="' + fileUrl + '" target="_blank" style="font-size: 12px; color: var(--primary-light);">🔗 Test link (click to verify)</a>';
+                            '<a href="' + fileUrl + '" target="_blank" style="font-size: 12px; color: var(--primary-light);">🔗 Test link (click to verify)</a>' +
+                            '<p style="font-size: 11px; color: var(--text-light); margin-top: 4px;">If link shows 401, go to Cloudinary Settings → Security → Strict Transformations and turn it OFF</p>';
                     } else {
                         console.error('[UPLOAD] FAILED:', cloudData);
                         const errMsg = cloudData.error ? cloudData.error.message : JSON.stringify(cloudData);
