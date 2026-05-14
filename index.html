@@ -1230,6 +1230,7 @@
     </style>
     <base target="_blank">
 <base target="_blank">
+<base target="_blank">
 </head>
 
 <body>
@@ -1423,6 +1424,16 @@
                     <label class="form-label">Invoice Amount (R)</label>
                     <input type="number" class="form-input" id="invAmount" placeholder="e.g. 1250.00" step="0.01"
                         required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">📎 Attach Invoice (Photo/PDF)</label>
+                    <input type="file" class="form-input" id="invFile" accept="image/*,.pdf" style="padding: 12px;">
+                    <div id="invFilePreview" style="margin-top: 8px; font-size: 13px; color: var(--text-light);"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Client Email (for reminders)</label>
+                    <input type="email" class="form-input" id="invEmail" placeholder="client@example.com">
+                    <p style="font-size: 12px; color: var(--text-light); margin-top: 4px;">Optional now. Required for 30-day auto-reminders.</p>
                 </div>
                 <button type="submit" class="btn btn-gold">➕ Add Invoice to Sheet</button>
             </form>
@@ -1917,6 +1928,19 @@
             const dateStr = now.toLocaleDateString('en-ZA', options);
             document.getElementById('headerSubtitle').textContent = dateStr;
 
+            // Invoice file preview
+            const invFileInput = document.getElementById('invFile');
+            if (invFileInput) {
+                invFileInput.addEventListener('change', function() {
+                    const preview = document.getElementById('invFilePreview');
+                    if (this.files && this.files[0]) {
+                        preview.textContent = '📎 ' + this.files[0].name + ' (' + (this.files[0].size / 1024).toFixed(1) + ' KB)';
+                    } else {
+                        preview.textContent = '';
+                    }
+                });
+            }
+
             const container = document.getElementById('tendersContainer');
             tenders.forEach((tender, index) => {
                 const row = document.createElement('div');
@@ -2261,6 +2285,8 @@
             const phone = document.getElementById('invPhone').value.trim();
             const job = document.getElementById('invJob').value.trim();
             const amount = parseFloat(document.getElementById('invAmount').value) || 0;
+            const email = document.getElementById('invEmail').value.trim();
+            const fileInput = document.getElementById('invFile');
 
             if (!name || !surname || !phone || !job || amount <= 0) {
                 alert('Please fill in all fields correctly.');
@@ -2269,6 +2295,40 @@
 
             updateInvoiceStatus('syncing', 'Saving to Google Sheets...');
 
+            let fileUrl = '';
+
+            // Upload file to Cloudinary if selected
+            if (fileInput.files && fileInput.files[0]) {
+                try {
+                    updateInvoiceStatus('syncing', 'Uploading invoice file...');
+                    const file = fileInput.files[0];
+
+                    const CLOUD_NAME = 'dpij51adw';
+                    const UPLOAD_PRESET = 'invoices_unsigned';
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('upload_preset', UPLOAD_PRESET);
+
+                    const cloudResponse = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const cloudData = await cloudResponse.json();
+                    if (cloudData.secure_url) {
+                        fileUrl = cloudData.secure_url;
+                        console.log('[INVOICE] Cloudinary upload:', fileUrl);
+                    } else {
+                        console.error('[INVOICE] Cloudinary failed:', cloudData);
+                        alert('File upload failed: ' + (cloudData.error?.message || 'Unknown error'));
+                    }
+                } catch (uploadErr) {
+                    console.error('[INVOICE] File upload failed:', uploadErr);
+                    alert('File upload failed. Check your Cloudinary config.');
+                }
+            }
+
             const payload = {
                 action: 'add',
                 name: name,
@@ -2276,7 +2336,9 @@
                 phone: phone,
                 job: job,
                 amount: amount,
-                paid: 'N'
+                paid: 'N',
+                email: email,
+                fileUrl: fileUrl
             };
 
             try {
@@ -2293,6 +2355,7 @@
                 }
 
                 document.getElementById('invoiceForm').reset();
+                document.getElementById('invFilePreview').textContent = '';
                 updateInvoiceStatus('ok', 'Invoice saved to Google Sheets!');
                 setTimeout(() => loadInvoices(), 800);
 
@@ -2337,6 +2400,39 @@
             }
         }
 
+        async function deleteInvoice(rowIndex) {
+            if (!confirm('Delete this invoice permanently?')) return;
+
+            updateInvoiceStatus('syncing', 'Deleting invoice...');
+
+            const payload = {
+                action: 'delete',
+                rowIndex: rowIndex
+            };
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Unknown error');
+                }
+
+                updateInvoiceStatus('ok', 'Invoice deleted!');
+                setTimeout(() => loadInvoices(), 800);
+
+            } catch (err) {
+                console.error('Failed to delete invoice:', err);
+                updateInvoiceStatus('error', 'Failed to delete: ' + err.message);
+                alert('Failed to delete invoice. Error: ' + err.message);
+            }
+        }
+
         function renderInvoices() {
             const container = document.getElementById('invoicesList');
             let filtered = invoices;
@@ -2376,13 +2472,18 @@
                                 ${isPaid ? '✓ Settled' : inv.daysOutstanding + ' days'}
                             </div>
                         </div>
-                        ${!isPaid ? `
-                            <div class="invoice-actions">
+                        ${inv.fileUrl ? `<div style="margin-top: 8px;"><a href="${escapeHtml(inv.fileUrl)}" target="_blank" style="font-size: 13px; color: var(--primary-light); text-decoration: none;">📎 View Attached Invoice</a></div>` : ''}
+                        ${inv.email ? `<div style="font-size: 12px; color: var(--text-light); margin-top: 4px;">📧 ${escapeHtml(inv.email)}</div>` : ''}
+                        <div class="invoice-actions">
+                            ${!isPaid ? `
                                 <button class="action-btn" style="background: #dcfce7; color: var(--success);" onclick="markInvoicePaid(${inv.rowIndex})">
                                     ✓ Mark Paid
                                 </button>
-                            </div>
-                        ` : ''}
+                            ` : ''}
+                            <button class="action-btn" style="background: #fee2e2; color: var(--danger);" onclick="deleteInvoice(${inv.rowIndex})">
+                                🗑️ Delete
+                            </button>
+                        </div>
                     </div>
                 `;
             }).join('');
