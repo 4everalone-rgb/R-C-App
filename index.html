@@ -2314,7 +2314,6 @@
                     const formData = new FormData();
                     formData.append('file', file);
                     formData.append('upload_preset', UPLOAD_PRESET);
-                    formData.append('access_mode', 'public');
 
                     console.log('[UPLOAD] Sending to Cloudinary...');
 
@@ -2346,6 +2345,7 @@
                 }
             } else {
                 console.log('[UPLOAD] No file selected');
+                document.getElementById('invFilePreview').textContent = '';
             }
 
             const payload = {
