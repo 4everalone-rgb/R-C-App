@@ -1306,37 +1306,9 @@
 
         <div class="task-list" id="taskList"></div>
         <div style="height: 20px;"></div>
-
-        <!-- Stock Inventory Panel -->
-        <div class="card" style="margin-top: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h3 style="font-size: 16px; color: var(--text); margin: 0;">📦 Stock Inventory</h3>
-                <span style="font-size: 12px; color: var(--text-light);">Track items & reorder points</span>
-            </div>
-            <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                <input type="text" id="stockNameInput" class="form-input" placeholder="Item name (e.g., Toner, Cable)" style="flex: 1;">
-                <input type="number" id="stockMinInput" class="form-input" placeholder="Min qty" style="width: 90px;" min="1" value="5">
-                <button class="btn btn-primary" onclick="addStockItem()">+ Add Stock</button>
-            </div>
-            <div id="stockList" style="display: flex; flex-direction: column; gap: 8px;"></div>
-        </div>
     </div>
 
-    
-        <!-- Stock Inventory Panel -->
-        <div class="card" style="margin-top: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h3 style="font-size: 16px; color: var(--text); margin: 0;">📦 Stock Inventory</h3>
-                <span style="font-size: 12px; color: var(--text-light);">Track items & reorder points</span>
-            </div>
-            <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                <input type="text" id="stockNameInput" class="form-input" placeholder="Item name (e.g., Toner, Cable)" style="flex: 1;">
-                <input type="number" id="stockMinInput" class="form-input" placeholder="Min qty" style="width: 90px;" min="1" value="5">
-                <button class="btn btn-primary" onclick="addStockItem()">+ Add Stock</button>
-            </div>
-            <div id="stockList" style="display: flex; flex-direction: column; gap: 8px;"></div>
-        </div>
-<!-- ===== BOOKINGS SECTION ===== -->
+    <!-- ===== BOOKINGS SECTION ===== -->
     <div id="bookings" class="section">
         <div class="filter-bar">
             <button class="filter-btn active" onclick="filterBookings('all', this)">All</button>
@@ -1386,6 +1358,39 @@
             </div>
         </div>
 
+        <div style="height: 20px;"></div>
+    </div>
+
+    <!-- ===== STOCK SECTION ===== -->
+    <div id="stock" class="section">
+        <div class="card">
+            <div class="card-title">Stock Management</div>
+            <div class="task-input-bar" style="margin-bottom: 16px;">
+                <input type="text" class="task-input" id="stockNameInput" placeholder="Add new stock item..."
+                    onkeypress="if(event.key==='Enter')addStockItem()">
+                <button class="task-add-btn" style="background: var(--primary);" onclick="addStockItem()">+</button>
+            </div>
+            <div id="stockList"></div>
+        </div>
+        <div style="height: 20px;"></div>
+    </div>
+
+    <!-- ===== UTILITIES SECTION ===== -->
+    <div id="utilities" class="section">
+        <div class="card">
+            <div class="card-title">Office Utilities</div>
+            <p style="font-size: 14px; color: var(--text-light); margin-bottom: 16px;">Tap an item to update its status.
+                Critical items pulse red. If items are missing, click Restore Defaults below.</p>
+            <div class="utility-grid" id="utilityGrid"></div>
+            <button class="btn btn-small"
+                style="margin-top: 16px; background: var(--primary-light); color: white; width: auto; padding: 10px 20px; font-size: 13px;"
+                onclick="forceRestoreUtilities()">🔄 Restore Default Utilities</button>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Utility History</div>
+            <div id="utilityHistory"></div>
+        </div>
         <div style="height: 20px;"></div>
     </div>
 
@@ -1786,6 +1791,7 @@
             });
             dataLoaded.tasks = true;
             renderTasks();
+            renderStock();
             checkAllDataLoaded();
             showSyncPulse();
             console.log('[SYNC] Tasks loaded:', tasks.length, 'items');
@@ -1839,7 +1845,7 @@
             checkAllDataLoaded();
         });
 
-        
+        // Stock items now managed within Tasks
 
         // FORCE restore utilities - merges with existing, preserves current status
         function forceRestoreUtilities() {
@@ -2053,7 +2059,7 @@
                     <div class="task-checkbox" onclick="event.stopPropagation(); toggleTask('${t.id}')"></div>
                     <div class="priority-${t.priority} task-priority"></div>
                     <div class="task-content">
-                        <div class="task-text">${t.category === 'stock' ? '📦 ' : ''}${escapeHtml(t.text)}${t.category === 'stock' && t.qty <= t.min ? ' <span style="color:#ef4444;font-weight:600;">🔴 LOW STOCK</span>' : ''}</div>
+                        <div class="task-text">${escapeHtml(t.text)}</div>
                         <div class="task-meta">
                             <span class="task-tag ${tags[t.category] || 'tag-office'}">${t.category}</span>
                             <span class="task-assignee">👤 ${t.assignee}</span>
@@ -2170,6 +2176,36 @@
         // ============================================
         // 📦 STOCK
         // ============================================
+        function renderStock() {
+            const container = document.getElementById('stockList');
+
+            if (stockItems.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <div>No stock items yet</div>
+                        <div style="font-size: 14px; margin-top: 8px;">Add items like thermal rolls, cables, parts...</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = stockItems.map((item) => `
+                <div class="stock-item" id="stock-${item.id}">
+                    <div class="stock-info">
+                        <div class="stock-name">${escapeHtml(item.name)}</div>
+                        <div class="stock-qty ${item.qty <= item.min ? 'stock-low' : ''}">Min: ${item.min} • ${item.qty <= item.min ? 'LOW STOCK' : 'OK'}</div>
+                    </div>
+                    <div class="stock-controls">
+                        <button class="stock-btn" onclick="adjustStock('${item.id}', -1)">−</button>
+                        <div class="stock-count ${item.qty <= item.min ? 'stock-low' : ''}">${item.qty}</div>
+                        <button class="stock-btn" onclick="adjustStock('${item.id}', 1)">+</button>
+                        <div class="stock-delete" onclick="removeStockItem('${item.id}')">🗑️</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         function addStockItem() {
             const name = document.getElementById('stockNameInput').value.trim();
             const minQty = parseInt(document.getElementById('stockMinInput').value) || 5;
@@ -2192,56 +2228,32 @@
             }).catch(() => { });
         }
 
-function renderStock() {
-            const container = document.getElementById('stockList');
-            if (!container) return;
-
-            // Filter tasks that are stock items
-            const stockItems = tasks.filter(t => t.category === 'stock');
-
-            if (stockItems.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state" style="padding: 20px;">
-                        <div class="empty-icon">📦</div>
-                        <div class="empty-title">No stock items</div>
-                        <div class="empty-desc">Add items above to track inventory</div>
-                    </div>`;
-                return;
-            }
-
-            container.innerHTML = stockItems.map((item) => `
-                <div class="stock-item" id="stock-${item.id}" style="background: ${item.qty <= item.min ? '#fef2f2' : 'white'}; border: 1px solid ${item.qty <= item.min ? '#fecaca' : '#e2e8f0'}; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <div class="stock-info">
-                        <div class="stock-name" style="font-weight: 600; color: var(--text);">${escapeHtml(item.name)}</div>
-                        <div class="stock-qty" style="font-size: 12px; color: ${item.qty <= item.min ? '#ef4444' : '#64748b'}; font-weight: ${item.qty <= item.min ? '600' : '400'};">Min: ${item.min} • ${item.qty <= item.min ? '🔴 LOW STOCK' : '✅ OK'}</div>
-                    </div>
-                    <div class="stock-controls" style="display: flex; align-items: center; gap: 8px;">
-                        <button class="stock-btn" onclick="adjustStock('${item.id}', -1)" style="width: 28px; height: 28px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-weight: 600;">−</button>
-                        <div class="stock-count" style="font-weight: 700; font-size: 16px; color: ${item.qty <= item.min ? '#ef4444' : 'var(--text)'}; min-width: 24px; text-align: center;">${item.qty}</div>
-                        <button class="stock-btn" onclick="adjustStock('${item.id}', 1)" style="width: 28px; height: 28px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-weight: 600;">+</button>
-                        <div class="stock-delete" onclick="removeStockItem('${item.id}')" style="cursor: pointer; padding: 4px; margin-left: 8px;">🗑️</div>
-                    </div>
-                </div>
-            `).join('');
+        function adjustStock(id, delta) {
+            const item = stockItems.find(s => s.id === id);
+            if (!item) return;
+            const newQty = Math.max(0, item.qty + delta);
+            safeUpdate('stock/' + id, { qty: newQty }).catch(() => { });
         }
 
-function adjustStock(id, delta) {
-            const item = tasks.find((i) => i.id === id);
-            if (!item || item.category !== 'stock') return;
-            item.qty = Math.max(0, (item.qty || 0) + delta);
-            safeWrite('tasks/' + id + '/qty', item.qty);
-            renderStock();
-        }
-
-function removeStockItem(id) {
-            const item = tasks.find((i) => i.id === id);
+        function removeStockItem(id) {
+            const item = stockItems.find(s => s.id === id);
             if (!item) return;
             if (confirm(`Remove "${item.name}" from stock?`)) {
-                db.ref('tasks/' + id).remove();
+                const el = document.getElementById(`stock-${id}`);
+                if (el) {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateX(100%)';
+                    setTimeout(() => safeDelete('stock/' + id).catch(() => { }), 200);
+                } else {
+                    safeDelete('stock/' + id).catch(() => { });
+                }
             }
         }
 
-function updateInvoiceStatus(status, message) {
+        // ============================================
+        // 🧾 INVOICES (Google Sheets Integration)
+        // ============================================
+        function updateInvoiceStatus(status, message) {
             const el = document.getElementById('invoiceSyncStatus');
             el.className = 'sheet-sync-status';
             if (status === 'syncing') el.classList.add('syncing');
@@ -2305,6 +2317,7 @@ function updateInvoiceStatus(status, message) {
 
                     console.log('[UPLOAD] Sending to Cloudinary...');
 
+                    // Try primary cloud name
                     // Determine correct Cloudinary resource type
                     const fileType = file.type || '';
                     const fileName = file.name.toLowerCase();
@@ -2312,9 +2325,9 @@ function updateInvoiceStatus(status, message) {
                     if (fileType.includes('image') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png') || fileName.endsWith('.gif') || fileName.endsWith('.webp') || fileName.endsWith('.svg')) {
                         resourceType = 'image';
                     } else if (fileType.includes('pdf') || fileName.endsWith('.pdf')) {
-                        resourceType = 'image';  // PDFs also use image endpoint
+                        resourceType = 'image';
                     } else {
-                        resourceType = 'raw';    // Word docs, Excel, etc.
+                        resourceType = 'raw';
                     }
                     console.log('[UPLOAD] Resource type:', resourceType);
 
@@ -2324,18 +2337,12 @@ function updateInvoiceStatus(status, message) {
                     formData.append('type', 'upload');
 
                     const uploadUrl = 'https://api.cloudinary.com/v1_1/' + CLOUD_NAME + '/' + resourceType + '/upload';
-                    console.log('[UPLOAD] URL:', uploadUrl);
-
-                    // Fetch with timeout so it doesn't hang forever
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 30000);
+                    console.log('[UPLOAD] Primary URL:', uploadUrl);
 
                     const cloudResponse = await fetch(uploadUrl, {
                         method: 'POST',
-                        body: formData,
-                        signal: controller.signal
+                        body: formData
                     });
-                    clearTimeout(timeoutId);
 
                     console.log('[UPLOAD] Response status:', cloudResponse.status);
 
@@ -2345,16 +2352,9 @@ function updateInvoiceStatus(status, message) {
                     if (cloudData.secure_url) {
                         fileUrl = cloudData.secure_url;
                         console.log('[UPLOAD] SUCCESS:', fileUrl);
-                        console.log('[UPLOAD] public_id:', cloudData.public_id);
-                        console.log('[UPLOAD] format:', cloudData.format);
-                        document.getElementById('invFilePreview').innerHTML = 
-                            '<span style="color: var(--success);">✓ Uploaded: ' + file.name + '</span><br>' +
-                            '<a href="' + fileUrl + '" target="_blank" style="font-size: 12px; color: var(--primary-light);">🔗 Test link (click to verify)</a>';
                     } else {
                         console.error('[UPLOAD] FAILED:', cloudData);
-                        const errMsg = cloudData.error ? cloudData.error.message : JSON.stringify(cloudData);
-                        document.getElementById('invFilePreview').innerHTML = 
-                            '<span style="color: var(--danger);">✗ Upload failed: ' + errMsg + '</span>';
+                        const errMsg = cloudData.error?.message || JSON.stringify(cloudData);
                         alert('File upload failed: ' + errMsg);
                     }
                 } catch (uploadErr) {
