@@ -2321,6 +2321,12 @@
 
                     console.log('[UPLOAD] Using cloud:', CLOUD_NAME, 'preset:', UPLOAD_PRESET);
 
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('upload_preset', UPLOAD_PRESET);
+
+                    console.log('[UPLOAD] Sending to Cloudinary...');
+
                     // Determine correct Cloudinary resource type
                     const fileType = file.type || '';
                     const fileName = file.name.toLowerCase();
@@ -2330,7 +2336,7 @@
                     } else if (fileType.includes('pdf') || fileName.endsWith('.pdf')) {
                         resourceType = 'image';  // PDFs also use image endpoint
                     } else {
-                        resourceType = 'raw';  // Word, Excel, etc.
+                        resourceType = 'raw';    // Word docs, Excel, etc.
                     }
                     console.log('[UPLOAD] Resource type:', resourceType);
 
@@ -2361,6 +2367,8 @@
                     if (cloudData.secure_url) {
                         fileUrl = cloudData.secure_url;
                         console.log('[UPLOAD] SUCCESS:', fileUrl);
+                        console.log('[UPLOAD] public_id:', cloudData.public_id);
+                        console.log('[UPLOAD] format:', cloudData.format);
                         document.getElementById('invFilePreview').innerHTML = 
                             '<span style="color: var(--success);">✓ Uploaded: ' + file.name + '</span><br>' +
                             '<a href="' + fileUrl + '" target="_blank" style="font-size: 12px; color: var(--primary-light);">🔗 Test link (click to verify)</a>';
@@ -2372,17 +2380,15 @@
                         alert('File upload failed: ' + errMsg);
                     }
                 } catch (uploadErr) {
-                    if (uploadErr.name === 'AbortError') {
-                        console.error('[UPLOAD] TIMEOUT');
-                        alert('Upload timed out. Check your connection and try again.');
-                    } else {
-                        console.error('[UPLOAD] CATCH ERROR:', uploadErr);
-                        alert('File upload failed: ' + uploadErr.message);
-                    }
+                    console.error('[UPLOAD] CATCH ERROR:', uploadErr);
+                    alert('File upload failed: ' + uploadErr.message);
                 }
             } else {
                 console.log('[UPLOAD] No file selected');
-                document.getElementById('invFilePreview').textContent = '';            action: 'add',
+            }
+
+            const payload = {
+                action: 'add',
                 name: name,
                 surname: surname,
                 phone: phone,
