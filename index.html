@@ -1846,7 +1846,17 @@
 
         db.ref('stock').on('value', (snapshot) => {
             stockItems = [];
-            snapshot.forEach((child) => stockItems.push(child.val()));
+            if (snapshot.exists()) {
+                snapshot.forEach((child) => {
+                    const val = child.val();
+                    if (val) {
+                        // Ensure id is set (use Firebase key as fallback)
+                        if (!val.id) val.id = child.key;
+                        stockItems.push(val);
+                    }
+                });
+            }
+            console.log('[SYNC] Stock loaded:', stockItems.length, 'items');
             dataLoaded.stock = true;
             renderStock();
             checkAllDataLoaded();
