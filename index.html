@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -15,1152 +14,185 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif
-        }
-
-        :root {
-            --primary: #1e3a8a;
-            --primary-light: #3b82f6;
-            --bg: #f1f5f9;
-            --card: #fff;
-            --text: #1e293b;
-            --text-light: #64748b;
-            --border: #e2e8f0;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --todoist-red: #e44332;
-            --invoice-gold: #d97706
-        }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            padding-bottom: 100px
-        }
-
-        .sync-indicator {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--success);
-            z-index: 9999;
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform .3s
-        }
-
-        .sync-indicator.active {
-            transform: scaleX(1)
-        }
-
-        .sync-indicator.error {
-            background: var(--danger)
-        }
-
-        .app-header {
-            background: var(--primary);
-            color: #fff;
-            padding: 24px 20px 32px;
-            position: sticky;
-            top: 0;
-            z-index: 100
-        }
-
-        .app-header h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 8px
-        }
-
-        .sync-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--success);
-            animation: pulse 2s infinite
-        }
-
-        .sync-dot.offline {
-            background: var(--danger)
-        }
-
-        .app-header p {
-            font-size: 15px;
-            opacity: .8
-        }
-
-        .tab-bar {
-            display: flex;
-            background: #fff;
-            padding: 4px;
-            margin: -20px 16px 16px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
-            position: relative;
-            z-index: 101;
-            overflow-x: auto
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 12px 8px;
-            border: none;
-            background: transparent;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-light);
-            cursor: pointer;
-            transition: all .2s;
-            text-align: center;
-            white-space: nowrap;
-            min-width: 70px
-        }
-
-        .tab-btn.active {
-            background: var(--primary);
-            color: #fff;
-            box-shadow: 0 2px 8px rgba(30, 58, 138, .3)
-        }
-
-        .section {
-            display: none;
-            padding: 0 16px;
-            animation: fadeIn .3s
-        }
-
-        .section.active {
-            display: block
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px)
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0)
-            }
-        }
-
-        .card {
-            background: var(--card);
-            border-radius: 20px;
-            padding: 24px 20px;
-            margin-bottom: 16px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .05)
-        }
-
-        .card-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--primary);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 20px
-        }
-
-        .card-title.gold {
-            color: var(--invoice-gold)
-        }
-
-        .form-group {
-            margin-bottom: 20px
-        }
-
-        .form-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-light);
-            text-transform: uppercase;
-            letter-spacing: .5px;
-            margin-bottom: 8px
-        }
-
-        .form-input,
-        .form-textarea,
-        .form-select {
-            width: 100%;
-            padding: 16px;
-            border: 2px solid var(--border);
-            border-radius: 16px;
-            font-size: 16px;
-            color: var(--text);
-            background: #f8fafc;
-            transition: all .2s
-        }
-
-        .form-input:focus,
-        .form-textarea:focus,
-        .form-select:focus {
-            outline: none;
-            border-color: var(--primary-light);
-            background: #fff
-        }
-
-        .form-textarea {
-            min-height: 120px;
-            resize: vertical
-        }
-
-        .highlight-box {
-            background: #fff7ed;
-            border: 2px dashed #fdba74;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 20px
-        }
-
-        .highlight-box .form-label {
-            color: #c2410c
-        }
-
-        .highlight-box .form-input {
-            background: #fff;
-            border-color: #fed7aa
-        }
-
-        .row-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px
-        }
-
-        .row-3 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 12px
-        }
-
-        .btn {
-            width: 100%;
-            padding: 18px;
-            border: none;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all .2s
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(30, 58, 138, .3)
-        }
-
-        .btn-primary:active {
-            transform: scale(.98)
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: #fff
-        }
-
-        .btn-gold {
-            background: var(--invoice-gold);
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(217, 119, 6, .3)
-        }
-
-        .btn-small {
-            padding: 8px 16px;
-            font-size: 12px;
-            border-radius: 10px;
-            width: auto
-        }
-
-        .task-input-bar {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px
-        }
-
-        .task-input {
-            flex: 1;
-            padding: 14px 16px;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            font-size: 16px;
-            background: #fff
-        }
-
-        .task-input:focus {
-            outline: none;
-            border-color: var(--todoist-red)
-        }
-
-        .task-add-btn {
-            width: 48px;
-            height: 48px;
-            border: none;
-            border-radius: 12px;
-            background: var(--todoist-red);
-            color: #fff;
-            font-size: 24px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center
-        }
-
-        .task-list {
-            background: #fff;
-            border-radius: 16px;
-            overflow: hidden
-        }
-
-        .task-item {
-            display: flex;
-            align-items: center;
-            padding: 16px;
-            border-bottom: 1px solid var(--border);
-            gap: 12px;
-            cursor: pointer;
-            transition: all .2s
-        }
-
-        .task-item:hover {
-            background: #f8fafc
-        }
-
-        .task-item:last-child {
-            border-bottom: none
-        }
-
-        .task-item.completed {
-            opacity: .5
-        }
-
-        .task-item.completed .task-text {
-            text-decoration: line-through;
-            color: var(--text-light)
-        }
-
-        .task-item.completed .task-checkbox {
-            background: var(--todoist-red);
-            border-color: var(--todoist-red)
-        }
-
-        .task-item.completed .task-checkbox::after {
-            content: '✓';
-            color: #fff;
-            font-size: 12px;
-            font-weight: 700
-        }
-
-        .task-item.removing {
-            animation: taskSlideOut .3s ease forwards
-        }
-
-        @keyframes taskSlideOut {
-            0% {
-                opacity: 1;
-                transform: translateX(0);
-                max-height: 80px;
-                padding: 16px
-            }
-
-            100% {
-                opacity: 0;
-                transform: translateX(100%);
-                max-height: 0;
-                padding: 0 16px;
-                border-bottom: none
-            }
-        }
-
-        .task-checkbox {
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--text-light);
-            border-radius: 50%;
-            cursor: pointer;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all .2s
-        }
-
-        .task-content {
-            flex: 1;
-            min-width: 0
-        }
-
-        .task-text {
-            font-size: 15px;
-            color: var(--text);
-            margin-bottom: 4px;
-            word-break: break-word
-        }
-
-        .task-meta {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap
-        }
-
-        .task-tag {
-            font-size: 11px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 4px;
-            text-transform: uppercase
-        }
-
-        .tag-callout {
-            background: #fef3c7;
-            color: #92400e
-        }
-
-        .tag-office {
-            background: #dbeafe;
-            color: #1e40af
-        }
-
-        .tag-stock {
-            background: #dcfce7;
-            color: #166534
-        }
-
-        .tag-urgent {
-            background: #fee2e2;
-            color: #991b1b
-        }
-
-        .task-assignee {
-            font-size: 11px;
-            color: var(--text-light);
-            font-weight: 600
-        }
-
-        .task-priority {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            flex-shrink: 0
-        }
-
-        .priority-1 {
-            background: var(--todoist-red)
-        }
-
-        .priority-2 {
-            background: #ff9a14
-        }
-
-        .priority-3 {
-            background: #316fea
-        }
-
-        .priority-4 {
-            background: var(--border)
-        }
-
-        .task-delete {
-            color: var(--text-light);
-            font-size: 18px;
-            padding: 4px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity .2s
-        }
-
-        .task-item:hover .task-delete {
-            opacity: 1
-        }
-
-        .task-filters {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            overflow-x: auto
-        }
-
-        .task-filter-btn {
-            padding: 6px 14px;
-            border: 2px solid var(--border);
-            background: #fff;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-light);
-            cursor: pointer;
-            white-space: nowrap;
-            outline: none;
-            -webkit-appearance: none;
-            appearance: none
-        }
-
-        .task-filter-btn.active {
-            background: var(--todoist-red);
-            color: #fff;
-            border-color: var(--todoist-red)
-        }
-
-        .utility-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px
-        }
-
-        .utility-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 20px;
-            text-align: center;
-            border: 2px solid var(--border);
-            transition: all .2s;
-            cursor: pointer
-        }
-
-        .utility-card.ok {
-            border-color: var(--success);
-            background: #f0fdf4
-        }
-
-        .utility-card.low {
-            border-color: var(--warning);
-            background: #fffbeb
-        }
-
-        .utility-card.critical {
-            border-color: var(--danger);
-            background: #fef2f2;
-            animation: pulse 2s infinite
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                transform: scale(1)
-            }
-
-            50% {
-                transform: scale(1.02)
-            }
-        }
-
-        .utility-icon {
-            font-size: 32px;
-            margin-bottom: 8px
-        }
-
-        .utility-name {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 4px
-        }
-
-        .utility-status {
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase
-        }
-
-        .utility-card.ok .utility-status {
-            color: var(--success)
-        }
-
-        .utility-card.low .utility-status {
-            color: var(--warning)
-        }
-
-        .utility-card.critical .utility-status {
-            color: var(--danger)
-        }
-
-        .utility-last {
-            font-size: 11px;
-            color: var(--text-light);
-            margin-top: 8px
-        }
-
-        .stock-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px;
-            background: #fff;
-            border-radius: 12px;
-            margin-bottom: 8px
-        }
-
-        .stock-info {
-            flex: 1;
-            min-width: 0
-        }
-
-        .stock-name {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text)
-        }
-
-        .stock-qty {
-            font-size: 13px;
-            color: var(--text-light);
-            margin-top: 2px
-        }
-
-        .stock-count {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--primary);
-            min-width: 40px;
-            text-align: center
-        }
-
-        .booking-item {
-            background: var(--card);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
-            border-left: 4px solid var(--border);
-            transition: all .2s
-        }
-
-        .booking-item.todo {
-            border-left-color: var(--warning)
-        }
-
-        .booking-item.pending {
-            border-left-color: var(--primary-light)
-        }
-
-        .booking-item.completed {
-            border-left-color: var(--success)
-        }
-
-        .booking-item.removing {
-            animation: bookingSlideOut .3s ease forwards
-        }
-
-        @keyframes bookingSlideOut {
-            0% {
-                opacity: 1;
-                transform: translateX(0);
-                max-height: 300px;
-                padding: 20px;
-                margin-bottom: 12px
-            }
-
-            100% {
-                opacity: 0;
-                transform: translateX(100%);
-                max-height: 0;
-                padding: 0 20px;
-                margin-bottom: 0;
-                border-left-width: 0
-            }
-        }
-
-        .booking-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px
-        }
-
-        .booking-id {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-light);
-            background: var(--bg);
-            padding: 4px 10px;
-            border-radius: 8px
-        }
-
-        .booking-status {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-            padding: 6px 12px;
-            border-radius: 20px
-        }
-
-        .status-todo {
-            background: #fef3c7;
-            color: #92400e
-        }
-
-        .status-pending {
-            background: #dbeafe;
-            color: #1e40af
-        }
-
-        .status-completed {
-            background: #dcfce7;
-            color: #166534
-        }
-
-        .booking-device {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 4px
-        }
-
-        .booking-customer {
-            font-size: 14px;
-            color: var(--text-light);
-            margin-bottom: 12px
-        }
-
-        .booking-desc {
-            font-size: 14px;
-            color: var(--text);
-            line-height: 1.5;
-            margin-bottom: 16px;
-            padding: 12px;
-            background: var(--bg);
-            border-radius: 12px
-        }
-
-        .booking-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center
-        }
-
-        .booking-price {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--primary)
-        }
-
-        .booking-actions {
-            display: flex;
-            gap: 8px
-        }
-
-        .action-btn {
-            padding: 8px 14px;
-            border: none;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer
-        }
-
-        .tender-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 0;
-            border-bottom: 1px solid var(--border)
-        }
-
-        .tender-row:last-child {
-            border-bottom: none
-        }
-
-        .tender-label {
-            font-size: 16px;
-            font-weight: 600;
-            min-width: 60px
-        }
-
-        .tender-input {
-            width: 90px;
-            padding: 12px;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            font-size: 18px;
-            text-align: center;
-            font-weight: 700;
-            color: var(--primary)
-        }
-
-        .tender-value {
-            font-size: 15px;
-            color: var(--text-light);
-            min-width: 80px;
-            text-align: right;
-            font-weight: 600
-        }
-
-        .total-box {
-            background: #f0fdf4;
-            padding: 20px;
-            border-radius: 16px;
-            text-align: center
-        }
-
-        .total-box.card-bg {
-            background: #eff6ff
-        }
-
-        .total-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-light);
-            text-transform: uppercase;
-            margin-bottom: 4px
-        }
-
-        .total-amount {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--success)
-        }
-
-        .total-box.card-bg .total-amount {
-            color: var(--primary)
-        }
-
-        .grand-total {
-            background: var(--primary);
-            color: #fff;
-            padding: 24px;
-            border-radius: 20px;
-            text-align: center;
-            margin-top: 16px
-        }
-
-        .grand-total-amount {
-            font-size: 36px;
-            font-weight: 800
-        }
-
-        .filter-bar {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            overflow-x: auto;
-            padding-bottom: 4px
-        }
-
-        .filter-btn {
-            padding: 8px 16px;
-            border: 2px solid var(--border);
-            background: #fff;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-light);
-            cursor: pointer;
-            white-space: nowrap
-        }
-
-        .filter-btn.active {
-            background: var(--primary);
-            color: #fff;
-            border-color: var(--primary)
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-light)
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 16px
-        }
-
-        .bottom-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #fff;
-            padding: 16px;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, .08);
-            z-index: 1000
-        }
-
-        .bottom-bar-inner {
-            max-width: 500px;
-            margin: 0 auto
-        }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, .5);
-            z-index: 2000;
-            justify-content: center;
-            align-items: flex-end
-        }
-
-        .modal-overlay.active {
-            display: flex
-        }
-
-        .modal {
-            background: #fff;
-            width: 100%;
-            max-width: 500px;
-            border-radius: 24px 24px 0 0;
-            padding: 24px;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: slideUp .3s
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(100%)
-            }
-
-            to {
-                transform: translateY(0)
-            }
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px
-        }
-
-        .modal-title {
-            font-size: 20px;
-            font-weight: 700
-        }
-
-        .modal-close {
-            font-size: 24px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-light)
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--bg);
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: opacity .3s
-        }
-
-        .loading-overlay.fade-out {
-            opacity: 0;
-            pointer-events: none
-        }
-
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin .8s linear infinite
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg)
-            }
-        }
-
-        .loading-text {
-            margin-top: 16px;
-            color: var(--text-light);
-            font-weight: 600
-        }
-
-        .invoice-item {
-            background: var(--card);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
-            border-left: 4px solid var(--invoice-gold);
-            transition: all .2s
-        }
-
-        .invoice-item.paid {
-            border-left-color: var(--success);
-            opacity: .7
-        }
-
-        .invoice-item.overdue {
-            border-left-color: var(--danger);
-            background: #fef2f2
-        }
-
-        .invoice-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px
-        }
-
-        .invoice-date {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-light);
-            background: var(--bg);
-            padding: 4px 10px;
-            border-radius: 8px
-        }
-
-        .invoice-status {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-            padding: 6px 12px;
-            border-radius: 20px
-        }
-
-        .status-unpaid {
-            background: #fef3c7;
-            color: #92400e
-        }
-
-        .status-paid {
-            background: #dcfce7;
-            color: #166534
-        }
-
-        .status-overdue {
-            background: #fee2e2;
-            color: #991b1b
-        }
-
-        .invoice-client {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 4px
-        }
-
-        .invoice-phone {
-            font-size: 14px;
-            color: var(--text-light);
-            margin-bottom: 12px
-        }
-
-        .invoice-job {
-            font-size: 14px;
-            color: var(--text);
-            line-height: 1.5;
-            margin-bottom: 16px;
-            padding: 12px;
-            background: var(--bg);
-            border-radius: 12px
-        }
-
-        .invoice-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center
-        }
-
-        .invoice-amount {
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--invoice-gold)
-        }
-
-        .invoice-amount.paid {
-            color: var(--success);
-            text-decoration: line-through
-        }
-
-        .invoice-days {
-            font-size: 12px;
-            font-weight: 700;
-            padding: 6px 12px;
-            border-radius: 20px;
-            background: var(--bg);
-            color: var(--text-light)
-        }
-
-        .invoice-days.overdue {
-            background: #fee2e2;
-            color: var(--danger)
-        }
-
-        .invoice-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px
-        }
-
-        .invoice-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 6px 12px;
-            border-radius: 20px;
-            margin-bottom: 12px
-        }
-
-        .badge-reminder {
-            background: #dbeafe;
-            color: var(--primary)
-        }
-
-        .sheet-sync-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 16px;
-            background: #f0fdf4;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--success)
-        }
-
-        .sheet-sync-status.error {
-            background: #fef2f2;
-            color: var(--danger)
-        }
-
-        .sheet-sync-status.syncing {
-            background: #fffbeb;
-            color: var(--warning)
-        }
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+        :root{--primary:#1e3a8a;--primary-light:#3b82f6;--bg:#f1f5f9;--card:#fff;--text:#1e293b;--text-light:#64748b;--border:#e2e8f0;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--todoist-red:#e44332;--invoice-gold:#d97706}
+        body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:100px}
+        .sync-indicator{position:fixed;top:0;left:0;right:0;height:4px;background:var(--success);z-index:9999;transform:scaleX(0);transform-origin:left;transition:transform .3s}
+        .sync-indicator.active{transform:scaleX(1)}
+        .sync-indicator.error{background:var(--danger)}
+        .app-header{background:var(--primary);color:#fff;padding:24px 20px 32px;position:sticky;top:0;z-index:100}
+        .app-header h1{font-size:28px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+        .sync-dot{width:10px;height:10px;border-radius:50%;background:var(--success);animation:pulse 2s infinite}
+        .sync-dot.offline{background:var(--danger)}
+        .app-header p{font-size:15px;opacity:.8}
+        .tab-bar{display:flex;background:#fff;padding:4px;margin:-20px 16px 16px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.08);position:relative;z-index:101;overflow-x:auto}
+        .tab-btn{flex:1;padding:12px 8px;border:none;background:transparent;border-radius:12px;font-size:12px;font-weight:600;color:var(--text-light);cursor:pointer;transition:all .2s;text-align:center;white-space:nowrap;min-width:70px}
+        .tab-btn.active{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(30,58,138,.3)}
+        .section{display:none;padding:0 16px;animation:fadeIn .3s}
+        .section.active{display:block}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .card{background:var(--card);border-radius:20px;padding:24px 20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+        .card-title{font-size:14px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:20px}
+        .card-title.gold{color:var(--invoice-gold)}
+        .form-group{margin-bottom:20px}
+        .form-label{display:block;font-size:13px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+        .form-input,.form-textarea,.form-select{width:100%;padding:16px;border:2px solid var(--border);border-radius:16px;font-size:16px;color:var(--text);background:#f8fafc;transition:all .2s}
+        .form-input:focus,.form-textarea:focus,.form-select:focus{outline:none;border-color:var(--primary-light);background:#fff}
+        .form-textarea{min-height:120px;resize:vertical}
+        .highlight-box{background:#fff7ed;border:2px dashed #fdba74;border-radius:16px;padding:16px;margin-bottom:20px}
+        .highlight-box .form-label{color:#c2410c}
+        .highlight-box .form-input{background:#fff;border-color:#fed7aa}
+        .row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+        .btn{width:100%;padding:18px;border:none;border-radius:16px;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:all .2s}
+        .btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 12px rgba(30,58,138,.3)}
+        .btn-primary:active{transform:scale(.98)}
+        .btn-danger{background:var(--danger);color:#fff}
+        .btn-gold{background:var(--invoice-gold);color:#fff;box-shadow:0 4px 12px rgba(217,119,6,.3)}
+        .btn-small{padding:8px 16px;font-size:12px;border-radius:10px;width:auto}
+        .task-input-bar{display:flex;gap:8px;margin-bottom:16px}
+        .task-input{flex:1;padding:14px 16px;border:2px solid var(--border);border-radius:12px;font-size:16px;background:#fff}
+        .task-input:focus{outline:none;border-color:var(--todoist-red)}
+        .task-add-btn{width:48px;height:48px;border:none;border-radius:12px;background:var(--todoist-red);color:#fff;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .task-list{background:#fff;border-radius:16px;overflow:hidden}
+        .task-item{display:flex;align-items:center;padding:16px;border-bottom:1px solid var(--border);gap:12px;cursor:pointer;transition:all .2s}
+        .task-item:hover{background:#f8fafc}
+        .task-item:last-child{border-bottom:none}
+        .task-item.completed{opacity:.5}
+        .task-item.completed .task-text{text-decoration:line-through;color:var(--text-light)}
+        .task-item.completed .task-checkbox{background:var(--todoist-red);border-color:var(--todoist-red)}
+        .task-item.completed .task-checkbox::after{content:'✓';color:#fff;font-size:12px;font-weight:700}
+        .task-item.removing{animation:taskSlideOut .3s ease forwards}
+        @keyframes taskSlideOut{0%{opacity:1;transform:translateX(0);max-height:80px;padding:16px}100%{opacity:0;transform:translateX(100%);max-height:0;padding:0 16px;border-bottom:none}}
+        .task-checkbox{width:20px;height:20px;border:2px solid var(--text-light);border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+        .task-content{flex:1;min-width:0}
+        .task-text{font-size:15px;color:var(--text);margin-bottom:4px;word-break:break-word}
+        .task-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .task-tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;text-transform:uppercase}
+        .tag-callout{background:#fef3c7;color:#92400e}
+        .tag-office{background:#dbeafe;color:#1e40af}
+        .tag-stock{background:#dcfce7;color:#166534}
+        .tag-urgent{background:#fee2e2;color:#991b1b}
+        .task-assignee{font-size:11px;color:var(--text-light);font-weight:600}
+        .task-priority{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+        .priority-1{background:var(--todoist-red)}
+        .priority-2{background:#ff9a14}
+        .priority-3{background:#316fea}
+        .priority-4{background:var(--border)}
+        .task-delete{color:var(--text-light);font-size:18px;padding:4px;cursor:pointer;opacity:0;transition:opacity .2s}
+        .task-item:hover .task-delete{opacity:1}
+        .task-filters{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto}
+        .task-filter-btn{padding:6px 14px;border:2px solid var(--border);background:#fff;border-radius:20px;font-size:12px;font-weight:600;color:var(--text-light);cursor:pointer;white-space:nowrap;outline:none;-webkit-appearance:none;appearance:none}
+        .task-filter-btn.active{background:var(--todoist-red);color:#fff;border-color:var(--todoist-red)}
+        .utility-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .utility-card{background:#fff;border-radius:16px;padding:20px;text-align:center;border:2px solid var(--border);transition:all .2s;cursor:pointer}
+        .utility-card.ok{border-color:var(--success);background:#f0fdf4}
+        .utility-card.low{border-color:var(--warning);background:#fffbeb}
+        .utility-card.critical{border-color:var(--danger);background:#fef2f2;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
+        .utility-icon{font-size:32px;margin-bottom:8px}
+        .utility-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+        .utility-status{font-size:12px;font-weight:700;text-transform:uppercase}
+        .utility-card.ok .utility-status{color:var(--success)}
+        .utility-card.low .utility-status{color:var(--warning)}
+        .utility-card.critical .utility-status{color:var(--danger)}
+        .utility-last{font-size:11px;color:var(--text-light);margin-top:8px}
+        .stock-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#fff;border-radius:12px;margin-bottom:8px;border:1px solid var(--border);transition:all .2s}
+        .stock-item:hover{background:#f8fafc}
+        .stock-info{flex:1;min-width:0}
+        .stock-name{font-size:15px;font-weight:600;color:var(--text)}
+        .stock-qty-label{font-size:12px;color:var(--text-light);margin-top:2px}
+        .stock-qty-label.low{color:var(--danger);font-weight:700}
+        .stock-controls{display:flex;align-items:center;gap:10px}
+        .stock-btn{width:34px;height:34px;border:2px solid var(--border);background:#fff;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+        .stock-btn:active{transform:scale(.9)}
+        .stock-btn.minus{color:var(--danger);border-color:#fecaca}
+        .stock-btn.plus{color:var(--success);border-color:#bbf7d0}
+        .stock-count{font-size:20px;font-weight:800;color:var(--primary);min-width:36px;text-align:center}
+        .stock-count.low{color:var(--danger)}
+        .stock-delete{color:var(--text-light);font-size:16px;padding:4px 6px;cursor:pointer;opacity:0;transition:opacity .2s;margin-left:4px;border:none;background:none}
+        .stock-item:hover .stock-delete{opacity:1}
+        .stock-add-row{display:flex;gap:8px;margin-bottom:12px}
+        .stock-add-row .task-input{flex:2}
+        .stock-add-input{flex:1;padding:14px 12px;border:2px solid var(--border);border-radius:12px;font-size:14px;background:#fff;text-align:center;font-weight:600;color:var(--primary)}
+        .stock-add-input:focus{outline:none;border-color:var(--primary-light)}
+        .stock-add-input::placeholder{color:var(--text-light);font-weight:400}
+        .booking-item{background:var(--card);border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);border-left:4px solid var(--border);transition:all .2s}
+        .booking-item.todo{border-left-color:var(--warning)}
+        .booking-item.pending{border-left-color:var(--primary-light)}
+        .booking-item.completed{border-left-color:var(--success)}
+        .booking-item.removing{animation:bookingSlideOut .3s ease forwards}
+        @keyframes bookingSlideOut{0%{opacity:1;transform:translateX(0);max-height:300px;padding:20px;margin-bottom:12px}100%{opacity:0;transform:translateX(100%);max-height:0;padding:0 20px;margin-bottom:0;border-left-width:0}}
+        .booking-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+        .booking-id{font-size:12px;font-weight:700;color:var(--text-light);background:var(--bg);padding:4px 10px;border-radius:8px}
+        .booking-status{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:6px 12px;border-radius:20px}
+        .status-todo{background:#fef3c7;color:#92400e}
+        .status-pending{background:#dbeafe;color:#1e40af}
+        .status-completed{background:#dcfce7;color:#166534}
+        .booking-device{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px}
+        .booking-customer{font-size:14px;color:var(--text-light);margin-bottom:12px}
+        .booking-desc{font-size:14px;color:var(--text);line-height:1.5;margin-bottom:16px;padding:12px;background:var(--bg);border-radius:12px}
+        .booking-footer{display:flex;justify-content:space-between;align-items:center}
+        .booking-price{font-size:20px;font-weight:700;color:var(--primary)}
+        .booking-actions{display:flex;gap:8px}
+        .action-btn{padding:8px 14px;border:none;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer}
+        .tender-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+        .tender-row:last-child{border-bottom:none}
+        .tender-label{font-size:16px;font-weight:600;min-width:60px}
+        .tender-input{width:90px;padding:12px;border:2px solid var(--border);border-radius:12px;font-size:18px;text-align:center;font-weight:700;color:var(--primary)}
+        .tender-value{font-size:15px;color:var(--text-light);min-width:80px;text-align:right;font-weight:600}
+        .total-box{background:#f0fdf4;padding:20px;border-radius:16px;text-align:center}
+        .total-box.card-bg{background:#eff6ff}
+        .total-label{font-size:13px;font-weight:600;color:var(--text-light);text-transform:uppercase;margin-bottom:4px}
+        .total-amount{font-size:28px;font-weight:800;color:var(--success)}
+        .total-box.card-bg .total-amount{color:var(--primary)}
+        .grand-total{background:var(--primary);color:#fff;padding:24px;border-radius:20px;text-align:center;margin-top:16px}
+        .grand-total-amount{font-size:36px;font-weight:800}
+        .filter-bar{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+        .filter-btn{padding:8px 16px;border:2px solid var(--border);background:#fff;border-radius:20px;font-size:13px;font-weight:600;color:var(--text-light);cursor:pointer;white-space:nowrap}
+        .filter-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+        .empty-state{text-align:center;padding:40px 20px;color:var(--text-light)}
+        .empty-state-icon{font-size:40px;margin-bottom:12px}
+        .bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;padding:16px;box-shadow:0 -4px 20px rgba(0,0,0,.08);z-index:1000}
+        .bottom-bar-inner{max-width:500px;margin:0 auto}
+        .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:2000;justify-content:center;align-items:flex-end}
+        .modal-overlay.active{display:flex}
+        .modal{background:#fff;width:100%;max-width:500px;border-radius:24px 24px 0 0;padding:24px;max-height:90vh;overflow-y:auto;animation:slideUp .3s}
+        @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+        .modal-title{font-size:20px;font-weight:700}
+        .modal-close{font-size:24px;background:none;border:none;cursor:pointer;color:var(--text-light)}
+        .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .3s}
+        .loading-overlay.fade-out{opacity:0;pointer-events:none}
+        .loading-spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .loading-text{margin-top:16px;color:var(--text-light);font-weight:600}
+        .invoice-item{background:var(--card);border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);border-left:4px solid var(--invoice-gold);transition:all .2s}
+        .invoice-item.paid{border-left-color:var(--success);opacity:.7}
+        .invoice-item.overdue{border-left-color:var(--danger);background:#fef2f2}
+        .invoice-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+        .invoice-date{font-size:12px;font-weight:700;color:var(--text-light);background:var(--bg);padding:4px 10px;border-radius:8px}
+        .invoice-status{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:6px 12px;border-radius:20px}
+        .status-unpaid{background:#fef3c7;color:#92400e}
+        .status-paid{background:#dcfce7;color:#166534}
+        .status-overdue{background:#fee2e2;color:#991b1b}
+        .invoice-client{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px}
+        .invoice-phone{font-size:14px;color:var(--text-light);margin-bottom:12px}
+        .invoice-job{font-size:14px;color:var(--text);line-height:1.5;margin-bottom:16px;padding:12px;background:var(--bg);border-radius:12px}
+        .invoice-footer{display:flex;justify-content:space-between;align-items:center}
+        .invoice-amount{font-size:24px;font-weight:800;color:var(--invoice-gold)}
+        .invoice-amount.paid{color:var(--success);text-decoration:line-through}
+        .invoice-days{font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;background:var(--bg);color:var(--text-light)}
+        .invoice-days.overdue{background:#fee2e2;color:var(--danger)}
+        .invoice-actions{display:flex;gap:8px;margin-top:12px}
+        .invoice-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;margin-bottom:12px}
+        .badge-reminder{background:#dbeafe;color:var(--primary)}
+        .sheet-sync-status{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#f0fdf4;border-radius:12px;margin-bottom:16px;font-size:13px;font-weight:600;color:var(--success)}
+        .sheet-sync-status.error{background:#fef2f2;color:var(--danger)}
+        .sheet-sync-status.syncing{background:#fffbeb;color:var(--warning)}
     </style>
     <base target="_blank">
 </head>
-
 <body>
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
@@ -1183,30 +215,13 @@
         <div class="card">
             <div class="card-title">Add Task</div>
             <div class="task-input-bar">
-                <input type="text" class="task-input" id="taskInput" placeholder="What needs to be done?"
-                    onkeypress="if(event.key==='Enter')addTask()">
+                <input type="text" class="task-input" id="taskInput" placeholder="What needs to be done?" onkeypress="if(event.key==='Enter')addTask()">
                 <button class="task-add-btn" onclick="addTask()">+</button>
             </div>
             <div class="row-3">
-                <div class="form-group" style="margin-bottom:0"><select class="form-select" id="taskCategory"
-                        style="padding:10px;font-size:13px">
-                        <option value="callout">Call Out</option>
-                        <option value="office">Office Work</option>
-                        <option value="stock">Stock Run</option>
-                        <option value="urgent">Urgent</option>
-                    </select></div>
-                <div class="form-group" style="margin-bottom:0"><select class="form-select" id="taskAssignee"
-                        style="padding:10px;font-size:13px">
-                        <option value="Josua">Josua</option>
-                        <option value="Reino">Reino</option>
-                    </select></div>
-                <div class="form-group" style="margin-bottom:0"><select class="form-select" id="taskPriority"
-                        style="padding:10px;font-size:13px">
-                        <option value="1">P1</option>
-                        <option value="2">P2</option>
-                        <option value="3" selected>P3</option>
-                        <option value="4">P4</option>
-                    </select></div>
+                <div class="form-group" style="margin-bottom:0"><select class="form-select" id="taskCategory" style="padding:10px;font-size:13px"><option value="callout">Call Out</option><option value="office">Office Work</option><option value="stock">Stock Run</option><option value="urgent">Urgent</option></select></div>
+                <div class="form-group" style="margin-bottom:0"><select class="form-select" id="taskAssignee" style="padding:10px;font-size:13px"><option value="Josua">Josua</option><option value="Reino">Reino</option></select></div>
+                <div class="form-group" style="margin-bottom:0"><select class="form-select" id="taskPriority" style="padding:10px;font-size:13px"><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></div>
             </div>
         </div>
         <div class="task-filters">
@@ -1217,6 +232,15 @@
             <button class="task-filter-btn" onclick="filterTasks('Reino',this)">Reino</button>
         </div>
         <div class="task-list" id="taskList"></div>
+        <div class="card" style="margin-top:20px">
+            <div class="card-title">📦 Stock Inventory</div>
+            <div class="stock-add-row">
+                <input type="text" class="task-input" id="stockNameInput" placeholder="Item name..." onkeypress="if(event.key==='Enter')addStockItem()">
+                <input type="number" class="stock-add-input" id="stockMinInput" placeholder="Min" value="5" min="0">
+                <button class="task-add-btn" style="background:var(--primary)" onclick="addStockItem()">+</button>
+            </div>
+            <div id="stockList"></div>
+        </div>
         <div style="height:20px"></div>
     </div>
 
@@ -1228,39 +252,20 @@
             <button class="filter-btn" onclick="filterBookings('completed',this)">Completed</button>
         </div>
         <div id="bookingsList"></div>
-        <button class="btn btn-primary" onclick="switchTab('newbooking',null)" style="margin-bottom:24px">➕ New Job
-            Card</button>
+        <button class="btn btn-primary" onclick="switchTab('newbooking',null)" style="margin-bottom:24px">➕ New Job Card</button>
     </div>
 
     <div id="cashup" class="section">
-        <div class="card">
-            <div class="card-title">👤 Technician</div><input type="text" class="form-input" id="techName"
-                placeholder="Your name" value="Josua">
-        </div>
-        <div class="card">
-            <div class="card-title">🪙 Cash Tenders</div>
-            <div id="tendersContainer"></div>
-        </div>
-        <div class="card">
-            <div class="card-title">💳 Card Payments</div><input type="number" class="form-input" id="cardTotal"
-                placeholder="0.00" step="0.01" oninput="calculateTotals()">
-        </div>
+        <div class="card"><div class="card-title">👤 Technician</div><input type="text" class="form-input" id="techName" placeholder="Your name" value="Josua"></div>
+        <div class="card"><div class="card-title">🪙 Cash Tenders</div><div id="tendersContainer"></div></div>
+        <div class="card"><div class="card-title">💳 Card Payments</div><input type="number" class="form-input" id="cardTotal" placeholder="0.00" step="0.01" oninput="calculateTotals()"></div>
         <div class="card">
             <div class="card-title">📊 Daily Totals</div>
             <div class="row-2">
-                <div class="total-box">
-                    <div class="total-label">Cash</div>
-                    <div class="total-amount" id="cashTotal">R0.00</div>
-                </div>
-                <div class="total-box card-bg">
-                    <div class="total-label">Card</div>
-                    <div class="total-amount" id="cardDisplay">R0.00</div>
-                </div>
+                <div class="total-box"><div class="total-label">Cash</div><div class="total-amount" id="cashTotal">R0.00</div></div>
+                <div class="total-box card-bg"><div class="total-label">Card</div><div class="total-amount" id="cardDisplay">R0.00</div></div>
             </div>
-            <div class="grand-total">
-                <div class="total-label" style="color:rgba(255,255,255,.8)">Grand Total</div>
-                <div class="grand-total-amount" id="grandTotal">R0.00</div>
-            </div>
+            <div class="grand-total"><div class="total-label" style="color:rgba(255,255,255,.8)">Grand Total</div><div class="grand-total-amount" id="grandTotal">R0.00</div></div>
         </div>
         <div style="height:20px"></div>
     </div>
@@ -1268,17 +273,11 @@
     <div id="utilities" class="section">
         <div class="card">
             <div class="card-title">Office Utilities</div>
-            <p style="font-size:14px;color:var(--text-light);margin-bottom:16px">Tap an item to update its status.
-                Critical items pulse red.</p>
+            <p style="font-size:14px;color:var(--text-light);margin-bottom:16px">Tap an item to update its status. Critical items pulse red.</p>
             <div class="utility-grid" id="utilityGrid"></div>
-            <button class="btn btn-small"
-                style="margin-top:16px;background:var(--primary-light);color:#fff;width:auto;padding:10px 20px;font-size:13px"
-                onclick="forceRestoreUtilities()">🔄 Restore Default Utilities</button>
+            <button class="btn btn-small" style="margin-top:16px;background:var(--primary-light);color:#fff;width:auto;padding:10px 20px;font-size:13px" onclick="forceRestoreUtilities()">🔄 Restore Default Utilities</button>
         </div>
-        <div class="card">
-            <div class="card-title">Utility History</div>
-            <div id="utilityHistory"></div>
-        </div>
+        <div class="card"><div class="card-title">Utility History</div><div id="utilityHistory"></div></div>
         <div style="height:20px"></div>
     </div>
 
@@ -1288,23 +287,14 @@
             <div class="sheet-sync-status" id="invoiceSyncStatus"><span>📡</span> Connected to Google Sheets</div>
             <form id="invoiceForm" onsubmit="saveInvoice(event)">
                 <div class="row-2">
-                    <div class="form-group"><label class="form-label">First Name</label><input type="text"
-                            class="form-input" id="invName" placeholder="John" required></div>
-                    <div class="form-group"><label class="form-label">Surname</label><input type="text"
-                            class="form-input" id="invSurname" placeholder="Doe" required></div>
+                    <div class="form-group"><label class="form-label">First Name</label><input type="text" class="form-input" id="invName" placeholder="John" required></div>
+                    <div class="form-group"><label class="form-label">Surname</label><input type="text" class="form-input" id="invSurname" placeholder="Doe" required></div>
                 </div>
-                <div class="form-group"><label class="form-label">Phone Number</label><input type="tel"
-                        class="form-input" id="invPhone" placeholder="082 123 4567" required></div>
-                <div class="form-group"><label class="form-label">Job Description</label><input type="text"
-                        class="form-input" id="invJob" placeholder="Screen replacement..." required></div>
-                <div class="form-group"><label class="form-label">Invoice Amount (R)</label><input type="number"
-                        class="form-input" id="invAmount" placeholder="1250.00" step="0.01" required></div>
-                <div class="form-group"><label class="form-label">📎 Attach Invoice</label><input type="file"
-                        class="form-input" id="invFile" accept="image/*,.pdf" style="padding:12px">
-                    <div id="invFilePreview" style="margin-top:8px;font-size:13px;color:var(--text-light)"></div>
-                </div>
-                <div class="form-group"><label class="form-label">Client Email</label><input type="email"
-                        class="form-input" id="invEmail" placeholder="client@example.com"></div>
+                <div class="form-group"><label class="form-label">Phone Number</label><input type="tel" class="form-input" id="invPhone" placeholder="082 123 4567" required></div>
+                <div class="form-group"><label class="form-label">Job Description</label><input type="text" class="form-input" id="invJob" placeholder="Screen replacement..." required></div>
+                <div class="form-group"><label class="form-label">Invoice Amount (R)</label><input type="number" class="form-input" id="invAmount" placeholder="1250.00" step="0.01" required></div>
+                <div class="form-group"><label class="form-label">📎 Attach Invoice</label><input type="file" class="form-input" id="invFile" accept="image/*,.pdf" style="padding:12px"><div id="invFilePreview" style="margin-top:8px;font-size:13px;color:var(--text-light)"></div></div>
+                <div class="form-group"><label class="form-label">Client Email</label><input type="email" class="form-input" id="invEmail" placeholder="client@example.com"></div>
                 <button type="submit" class="btn btn-gold">➕ Add Invoice to Sheet</button>
             </form>
         </div>
@@ -1322,171 +312,134 @@
         <form id="bookingForm" onsubmit="saveBooking(event)">
             <div class="card">
                 <div class="card-title">Customer Details</div>
-                <div class="form-group"><label class="form-label">Full Name</label><input type="text" class="form-input"
-                        id="custName" placeholder="John Doe" required></div>
-                <div class="form-group"><label class="form-label">Contact Number</label><input type="tel"
-                        class="form-input" id="custPhone" placeholder="082 123 4567" required></div>
+                <div class="form-group"><label class="form-label">Full Name</label><input type="text" class="form-input" id="custName" placeholder="John Doe" required></div>
+                <div class="form-group"><label class="form-label">Contact Number</label><input type="tel" class="form-input" id="custPhone" placeholder="082 123 4567" required></div>
             </div>
             <div class="card">
                 <div class="card-title">Hardware Info</div>
-                <div class="form-group"><label class="form-label">Device Brand & Model</label><input type="text"
-                        class="form-input" id="deviceModel" placeholder="MacBook Pro" required></div>
-                <div class="form-group"><label class="form-label">Serial Number</label><input type="text"
-                        class="form-input" id="serialNum" placeholder="S/N: 12345ABC"></div>
-                <div class="highlight-box">
-                    <div class="form-group" style="margin-bottom:0"><label class="form-label">Device
-                            Password</label><input type="text" class="form-input" id="devicePass"
-                            placeholder="Pattern or PIN"></div>
-                </div>
+                <div class="form-group"><label class="form-label">Device Brand & Model</label><input type="text" class="form-input" id="deviceModel" placeholder="MacBook Pro" required></div>
+                <div class="form-group"><label class="form-label">Serial Number</label><input type="text" class="form-input" id="serialNum" placeholder="S/N: 12345ABC"></div>
+                <div class="highlight-box"><div class="form-group" style="margin-bottom:0"><label class="form-label">Device Password</label><input type="text" class="form-input" id="devicePass" placeholder="Pattern or PIN"></div></div>
             </div>
-            <div class="card">
-                <div class="card-title">Job Description</div>
-                <div class="form-group"><textarea class="form-textarea" id="jobDesc" placeholder="Describe the issue..."
-                        required></textarea></div>
-            </div>
+            <div class="card"><div class="card-title">Job Description</div><div class="form-group"><textarea class="form-textarea" id="jobDesc" placeholder="Describe the issue..." required></textarea></div></div>
             <div class="card">
                 <div class="card-title">Financials</div>
                 <div class="row-2">
-                    <div class="form-group"><label class="form-label">Quote</label><input type="number"
-                            class="form-input" id="quoteAmount" placeholder="690" step="0.01" required></div>
-                    <div class="form-group"><label class="form-label">Deposit</label><input type="number"
-                            class="form-input" id="depositAmount" placeholder="0.00" step="0.01"></div>
+                    <div class="form-group"><label class="form-label">Quote</label><input type="number" class="form-input" id="quoteAmount" placeholder="690" step="0.01" required></div>
+                    <div class="form-group"><label class="form-label">Deposit</label><input type="number" class="form-input" id="depositAmount" placeholder="0.00" step="0.01"></div>
                 </div>
             </div>
-            <div class="card">
-                <div class="card-title">Status</div><select class="form-select" id="jobStatus">
-                    <option value="todo">To Do</option>
-                    <option value="pending">Pending</option>
-                    <option value="completed">Completed</option>
-                </select>
-            </div>
+            <div class="card"><div class="card-title">Status</div><select class="form-select" id="jobStatus"><option value="todo">To Do</option><option value="pending">Pending</option><option value="completed">Completed</option></select></div>
             <button type="submit" class="btn btn-primary" style="margin-bottom:24px">Finalize Job Card</button>
         </form>
     </div>
 
     <div class="modal-overlay" id="editModal">
         <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title">Edit Job Card</div><button class="modal-close"
-                    onclick="closeModal()">✕</button>
-            </div>
+            <div class="modal-header"><div class="modal-title">Edit Job Card</div><button class="modal-close" onclick="closeModal()">✕</button></div>
             <form id="editForm" onsubmit="updateBooking(event)">
                 <input type="hidden" id="editId">
-                <div class="form-group"><label class="form-label">Customer</label><input type="text" class="form-input"
-                        id="editCustName" required></div>
-                <div class="form-group"><label class="form-label">Device</label><input type="text" class="form-input"
-                        id="editDevice" required></div>
-                <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea"
-                        id="editDesc" required></textarea></div>
+                <div class="form-group"><label class="form-label">Customer</label><input type="text" class="form-input" id="editCustName" required></div>
+                <div class="form-group"><label class="form-label">Device</label><input type="text" class="form-input" id="editDevice" required></div>
+                <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="editDesc" required></textarea></div>
                 <div class="row-2">
-                    <div class="form-group"><label class="form-label">Quote</label><input type="number"
-                            class="form-input" id="editQuote" step="0.01" required></div>
-                    <div class="form-group"><label class="form-label">Deposit</label><input type="number"
-                            class="form-input" id="editDeposit" step="0.01"></div>
+                    <div class="form-group"><label class="form-label">Quote</label><input type="number" class="form-input" id="editQuote" step="0.01" required></div>
+                    <div class="form-group"><label class="form-label">Deposit</label><input type="number" class="form-input" id="editDeposit" step="0.01"></div>
                 </div>
-                <div class="form-group"><label class="form-label">Status</label><select class="form-select"
-                        id="editStatus">
-                        <option value="todo">To Do</option>
-                        <option value="pending">Pending</option>
-                        <option value="completed">Completed</option>
-                    </select></div>
+                <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="editStatus"><option value="todo">To Do</option><option value="pending">Pending</option><option value="completed">Completed</option></select></div>
                 <button type="submit" class="btn btn-primary">Update Job</button>
-                <button type="button" class="btn btn-danger" style="margin-top:8px" onclick="deleteBooking()">Delete
-                    Job</button>
+                <button type="button" class="btn btn-danger" style="margin-top:8px" onclick="deleteBooking()">Delete Job</button>
             </form>
         </div>
     </div>
 
-    <div class="bottom-bar">
-        <div class="bottom-bar-inner"><button class="btn btn-primary" onclick="exportAll()">📥 Export Daily
-                Report</button></div>
-    </div>
+    <div class="bottom-bar"><div class="bottom-bar-inner"><button class="btn btn-primary" onclick="exportAll()">📥 Export Daily Report</button></div></div>
 
-    <script>
-        const firebaseConfig = { apiKey: "AIzaSyAaHaARiOFV_10UPoM6PtpA8uCWdu1uNSE", authDomain: "r-and-c-workshop-app.firebaseapp.com", databaseURL: "https://r-and-c-workshop-app-default-rtdb.firebaseio.com", projectId: "r-and-c-workshop-app", storageBucket: "r-and-c-workshop-app.firebasestorage.app", messagingSenderId: "691339631464", appId: "1:691339631464:web:d3fa277c1cad9425d394dd" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbw89wEfwpSsLi5jGvAgksgJFFEffrnQpQ3miUB_twrdk8OFo9VQT33NYNArcXPG7q16/exec';
+<script>
+const firebaseConfig={apiKey:"AIzaSyAaHaARiOFV_10UPoM6PtpA8uCWdu1uNSE",authDomain:"r-and-c-workshop-app.firebaseapp.com",databaseURL:"https://r-and-c-workshop-app-default-rtdb.firebaseio.com",projectId:"r-and-c-workshop-app",storageBucket:"r-and-c-workshop-app.firebasestorage.app",messagingSenderId:"691339631464",appId:"1:691339631464:web:d3fa277c1cad9425d394dd"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+const GAS_URL='https://script.google.com/macros/s/AKfycbw89wEfwpSsLi5jGvAgksgJFFEffrnQpQ3miUB_twrdk8OFo9VQT33NYNArcXPG7q16/exec';
 
-        const tenders = [{ value: 200, label: 'R200' }, { value: 100, label: 'R100' }, { value: 50, label: 'R50' }, { value: 20, label: 'R20' }, { value: 10, label: 'R10' }, { value: 5, label: 'R5' }, { value: 2, label: 'R2' }, { value: 1, label: 'R1' }, { value: .5, label: '50c' }, { value: .2, label: '20c' }, { value: .1, label: '10c' }];
-        const defaultUtilities = [{ id: 'toilet', name: 'Toilet Paper', icon: '🧻', status: 'ok', lastCheck: null, lastBy: '' }, { id: 'cleaning', name: 'Cleaning Supplies', icon: '🧼', status: 'ok', lastCheck: null, lastBy: '' }, { id: 'electricity', name: 'Electricity', icon: '⚡', status: 'ok', lastCheck: null, lastBy: '' }];
+const tenders=[{value:200,label:'R200'},{value:100,label:'R100'},{value:50,label:'R50'},{value:20,label:'R20'},{value:10,label:'R10'},{value:5,label:'R5'},{value:2,label:'R2'},{value:1,label:'R1'},{value:.5,label:'50c'},{value:.2,label:'20c'},{value:.1,label:'10c'}];
+const defaultUtilities=[{id:'toilet',name:'Toilet Paper',icon:'🧻',status:'ok',lastCheck:null,lastBy:''},{id:'cleaning',name:'Cleaning Supplies',icon:'🧼',status:'ok',lastCheck:null,lastBy:''},{id:'electricity',name:'Electricity',icon:'⚡',status:'ok',lastCheck:null,lastBy:''}];
 
-        let bookings = [], tasks = [], utilities = [], invoices = [];
-        let currentFilter = 'all', currentTaskFilter = 'all', currentInvoiceFilter = 'all';
-        let isOnline = true, pendingWrites = 0;
-        let dataLoaded = { bookings: false, tasks: false, utilities: false };
+let bookings=[],tasks=[],utilities=[],invoices=[],stockItems=[];
+let currentFilter='all',currentTaskFilter='all',currentInvoiceFilter='all';
+let isOnline=true,pendingWrites=0;
+let dataLoaded={bookings:false,tasks:false,utilities:false,stock:false};
 
-        db.ref('.info/connected').on('value', snap => { isOnline = snap.val() === true; updateSyncIndicator() });
+db.ref('.info/connected').on('value',snap=>{isOnline=snap.val()===true;updateSyncIndicator()});
 
-        function updateSyncIndicator() { const dot = document.getElementById('syncDot'), ind = document.getElementById('syncIndicator'); if (isOnline && pendingWrites === 0) { dot.classList.remove('offline'); dot.style.background = 'var(--success)'; ind.classList.remove('error', 'active') } else if (isOnline && pendingWrites > 0) { dot.style.background = 'var(--warning)'; ind.classList.add('active') } else { dot.classList.add('offline'); ind.classList.add('error', 'active') } }
-        function showSyncPulse() { const ind = document.getElementById('syncIndicator'); ind.classList.add('active'); setTimeout(() => { if (pendingWrites === 0 && isOnline) ind.classList.remove('active') }, 800) }
+function updateSyncIndicator(){const dot=document.getElementById('syncDot'),ind=document.getElementById('syncIndicator');if(isOnline&&pendingWrites===0){dot.classList.remove('offline');dot.style.background='var(--success)';ind.classList.remove('error','active')}else if(isOnline&&pendingWrites>0){dot.style.background='var(--warning)';ind.classList.add('active')}else{dot.classList.add('offline');ind.classList.add('error','active')}}
+function showSyncPulse(){const ind=document.getElementById('syncIndicator');ind.classList.add('active');setTimeout(()=>{if(pendingWrites===0&&isOnline)ind.classList.remove('active')},800)}
 
-        function safeWrite(p, d, r = 3) { pendingWrites++; updateSyncIndicator(); const w = () => db.ref(p).set(d).then(() => { pendingWrites--; updateSyncIndicator(); showSyncPulse(); return true }).catch(e => { if (r > 0 && isOnline) { r--; return new Promise(x => setTimeout(x, 1000)).then(w) } pendingWrites--; updateSyncIndicator(); alert('Save failed: ' + e.message); throw e }); return w() }
-        function safeUpdate(p, u, r = 3) { pendingWrites++; updateSyncIndicator(); const w = () => db.ref(p).update(u).then(() => { pendingWrites--; updateSyncIndicator(); showSyncPulse(); return true }).catch(e => { if (r > 0 && isOnline) { r--; return new Promise(x => setTimeout(x, 1000)).then(w) } pendingWrites--; updateSyncIndicator(); alert('Update failed: ' + e.message); throw e }); return w() }
-        function safeDelete(p, r = 3) { pendingWrites++; updateSyncIndicator(); const w = () => db.ref(p).remove().then(() => { pendingWrites--; updateSyncIndicator(); showSyncPulse(); return true }).catch(e => { if (r > 0 && isOnline) { r--; return new Promise(x => setTimeout(x, 1000)).then(w) } pendingWrites--; updateSyncIndicator(); alert('Delete failed: ' + e.message); throw e }); return w() }
+function safeWrite(p,d,r=3){pendingWrites++;updateSyncIndicator();const w=()=>db.ref(p).set(d).then(()=>{pendingWrites--;updateSyncIndicator();showSyncPulse();return true}).catch(e=>{if(r>0&&isOnline){r--;return new Promise(x=>setTimeout(x,1000)).then(w)}pendingWrites--;updateSyncIndicator();alert('Save failed: '+e.message);throw e});return w()}
+function safeUpdate(p,u,r=3){pendingWrites++;updateSyncIndicator();const w=()=>db.ref(p).update(u).then(()=>{pendingWrites--;updateSyncIndicator();showSyncPulse();return true}).catch(e=>{if(r>0&&isOnline){r--;return new Promise(x=>setTimeout(x,1000)).then(w)}pendingWrites--;updateSyncIndicator();alert('Update failed: '+e.message);throw e});return w()}
+function safeDelete(p,r=3){pendingWrites++;updateSyncIndicator();const w=()=>db.ref(p).remove().then(()=>{pendingWrites--;updateSyncIndicator();showSyncPulse();return true}).catch(e=>{if(r>0&&isOnline){r--;return new Promise(x=>setTimeout(x,1000)).then(w)}pendingWrites--;updateSyncIndicator();alert('Delete failed: '+e.message);throw e});return w()}
 
-        function checkAllDataLoaded() { if (dataLoaded.bookings && dataLoaded.tasks && dataLoaded.utilities) { const o = document.getElementById('loadingOverlay'); o.classList.add('fade-out'); setTimeout(() => o.style.display = 'none', 300) } }
+function checkAllDataLoaded(){if(dataLoaded.bookings&&dataLoaded.tasks&&dataLoaded.utilities&&dataLoaded.stock){const o=document.getElementById('loadingOverlay');o.classList.add('fade-out');setTimeout(()=>o.style.display='none',300)}}
 
-        db.ref('bookings').on('value', snap => { bookings = []; snap.forEach(c => bookings.push(c.val())); bookings.sort((a, b) => b.id - a.id); dataLoaded.bookings = true; renderBookings(); checkAllDataLoaded(); showSyncPulse() }, e => { dataLoaded.bookings = true; checkAllDataLoaded() });
+db.ref('bookings').on('value',snap=>{bookings=[];snap.forEach(c=>bookings.push(c.val()));bookings.sort((a,b)=>b.id-a.id);dataLoaded.bookings=true;renderBookings();checkAllDataLoaded();showSyncPulse()},e=>{dataLoaded.bookings=true;checkAllDataLoaded()});
+db.ref('tasks').on('value',snap=>{tasks=[];if(snap.exists())snap.forEach(c=>{const t=c.val();if(!t.id)t.id=c.key;tasks.push(t)});tasks.sort((a,b)=>{if(a.completed!==b.completed)return a.completed?1:-1;const pa=parseInt(a.priority)||4,pb=parseInt(b.priority)||4;if(pa!==pb)return pa-pb;return(b.created?new Date(b.created):new Date(0))-(a.created?new Date(a.created):new Date(0))});dataLoaded.tasks=true;renderTasks();checkAllDataLoaded();showSyncPulse()},e=>{dataLoaded.tasks=true;checkAllDataLoaded()});
+db.ref('utilities').on('value',snap=>{utilities=[];let found=[];if(snap.exists())snap.forEach(c=>{const u=c.val();if(!u.id)u.id=c.key;utilities.push(u);found.push(u.id)});const missing=defaultUtilities.filter(d=>!found.includes(d.id));if(missing.length>0){const up={};missing.forEach(u=>{up[u.id]={id:u.id,name:u.name,icon:u.icon,status:'ok',lastCheck:new Date().toISOString(),lastBy:'System'}});db.ref('utilities').update(up).catch(()=>{})}dataLoaded.utilities=true;renderUtilities();checkAllDataLoaded();showSyncPulse()},e=>{dataLoaded.utilities=true;checkAllDataLoaded()});
+db.ref('stock').on('value',snap=>{stockItems=[];if(snap.exists())snap.forEach(c=>{const s=c.val();if(!s.id)s.id=c.key;stockItems.push(s)});dataLoaded.stock=true;renderStock();checkAllDataLoaded();showSyncPulse()},e=>{dataLoaded.stock=true;checkAllDataLoaded()});
 
-        db.ref('tasks').on('value', snap => { tasks = []; if (snap.exists()) snap.forEach(c => { const t = c.val(); if (!t.id) t.id = c.key; tasks.push(t) }); tasks.sort((a, b) => { if (a.completed !== b.completed) return a.completed ? 1 : -1; const pa = parseInt(a.priority) || 4, pb = parseInt(b.priority) || 4; if (pa !== pb) return pa - pb; return (b.created ? new Date(b.created) : new Date(0)) - (a.created ? new Date(a.created) : new Date(0)) }); dataLoaded.tasks = true; renderTasks(); checkAllDataLoaded(); showSyncPulse() }, e => { dataLoaded.tasks = true; checkAllDataLoaded() });
+function forceRestoreUtilities(){const up={};defaultUtilities.forEach(u=>{if(!utilities.find(e=>e.id===u.id))up[u.id]={id:u.id,name:u.name,icon:u.icon,status:'ok',lastCheck:new Date().toISOString(),lastBy:'System'}});if(!Object.keys(up).length){alert('All utilities exist!');return}db.ref('utilities').update(up).then(()=>alert('Restored: '+Object.keys(up).join(', '))).catch(e=>alert('Failed: '+e.message))}
+setTimeout(()=>{const o=document.getElementById('loadingOverlay');if(o&&o.style.display!=='none'){o.classList.add('fade-out');setTimeout(()=>o.style.display='none',300)}},8000);
 
-        db.ref('utilities').on('value', snap => { utilities = []; let found = []; if (snap.exists()) snap.forEach(c => { const u = c.val(); if (!u.id) u.id = c.key; utilities.push(u); found.push(u.id) }); const missing = defaultUtilities.filter(d => !found.includes(d.id)); if (missing.length > 0) { const up = {}; missing.forEach(u => { up[u.id] = { id: u.id, name: u.name, icon: u.icon, status: 'ok', lastCheck: new Date().toISOString(), lastBy: 'System' } }); db.ref('utilities').update(up).catch(() => { }) } dataLoaded.utilities = true; renderUtilities(); checkAllDataLoaded(); showSyncPulse() }, e => { dataLoaded.utilities = true; checkAllDataLoaded() });
+function init(){document.getElementById('headerSubtitle').textContent=new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long'});const fi=document.getElementById('invFile');if(fi)fi.addEventListener('change',function(){const p=document.getElementById('invFilePreview');if(this.files&&this.files[0])p.textContent='📎 '+this.files[0].name+' ('+(this.files[0].size/1024).toFixed(1)+' KB)';else p.textContent=''});const c=document.getElementById('tendersContainer');tenders.forEach((t,i)=>{const r=document.createElement('div');r.className='tender-row';r.innerHTML=`<span class="tender-label">${t.label}</span><input type="number" class="tender-input" id="tender-${i}" placeholder="0" min="0" oninput="calculateTotals()" inputmode="numeric"><span class="tender-value" id="value-${i}">R0.00</span>`;c.appendChild(r)});loadInvoices()}
 
-        function forceRestoreUtilities() { const up = {}; defaultUtilities.forEach(u => { if (!utilities.find(e => e.id === u.id)) up[u.id] = { id: u.id, name: u.name, icon: u.icon, status: 'ok', lastCheck: new Date().toISOString(), lastBy: 'System' } }); if (!Object.keys(up).length) { alert('All utilities exist!'); return } db.ref('utilities').update(up).then(() => alert('Restored: ' + Object.keys(up).join(', '))).catch(e => alert('Failed: ' + e.message)) }
+function switchTab(tab,btn){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById(tab).classList.add('active');if(btn)btn.classList.add('active');const t={tasks:['✅ Tasks','Task Manager'],bookings:['🔧 Jobs','Workshop Jobs'],cashup:['💰 Cashup','Daily Cashup'],utilities:['⚡ Utils','Office Utilities'],invoices:['🧾 Invoices','Invoice Tracker'],newbooking:['➕ New Job','Create Job Card']};document.getElementById('headerTitle').innerHTML=`<span class="sync-dot" id="syncDot"></span> ${t[tab][0]}`;document.getElementById('headerSubtitle').textContent=t[tab][1];if(tab==='invoices')loadInvoices()}
 
-        setTimeout(() => { const o = document.getElementById('loadingOverlay'); if (o && o.style.display !== 'none') { o.classList.add('fade-out'); setTimeout(() => o.style.display = 'none', 300) } }, 8000);
+function calculateTotals(){let ct=0;tenders.forEach((t,i)=>{const q=parseInt(document.getElementById(`tender-${i}`).value)||0;const s=q*t.value;ct+=s;document.getElementById(`value-${i}`).textContent=`R${s.toFixed(2)}`});const card=parseFloat(document.getElementById('cardTotal').value)||0;document.getElementById('cashTotal').textContent=`R${ct.toFixed(2)}`;document.getElementById('cardDisplay').textContent=`R${card.toFixed(2)}`;document.getElementById('grandTotal').textContent=`R${(ct+card).toFixed(2)}`}
 
-        function init() { document.getElementById('headerSubtitle').textContent = new Date().toLocaleDateString('en-ZA', { day: 'numeric', month: 'long' }); const fi = document.getElementById('invFile'); if (fi) fi.addEventListener('change', function () { const p = document.getElementById('invFilePreview'); if (this.files && this.files[0]) p.textContent = '📎 ' + this.files[0].name + ' (' + (this.files[0].size / 1024).toFixed(1) + ' KB)'; else p.textContent = '' }); const c = document.getElementById('tendersContainer'); tenders.forEach((t, i) => { const r = document.createElement('div'); r.className = 'tender-row'; r.innerHTML = `<span class="tender-label">${t.label}</span><input type="number" class="tender-input" id="tender-${i}" placeholder="0" min="0" oninput="calculateTotals()" inputmode="numeric"><span class="tender-value" id="value-${i}">R0.00</span>`; c.appendChild(r) }); loadInvoices() }
+function addTask(){const txt=document.getElementById('taskInput').value.trim();if(!txt)return;const ref=db.ref('tasks').push();const task={id:ref.key,text:txt,category:document.getElementById('taskCategory').value,assignee:document.getElementById('taskAssignee').value,priority:parseInt(document.getElementById('taskPriority').value)||3,completed:false,created:new Date().toISOString()};safeWrite('tasks/'+ref.key,task).then(()=>document.getElementById('taskInput').value='').catch(()=>{})}
 
-        function switchTab(tab, btn) { document.querySelectorAll('.section').forEach(s => s.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(tab).classList.add('active'); if (btn) btn.classList.add('active'); const t = { tasks: ['✅ Tasks', 'Task Manager'], bookings: ['🔧 Jobs', 'Workshop Jobs'], cashup: ['💰 Cashup', 'Daily Cashup'], utilities: ['⚡ Utils', 'Office Utilities'], invoices: ['🧾 Invoices', 'Invoice Tracker'], newbooking: ['➕ New Job', 'Create Job Card'] }; document.getElementById('headerTitle').innerHTML = `<span class="sync-dot" id="syncDot"></span> ${t[tab][0]}`; document.getElementById('headerSubtitle').textContent = t[tab][1]; if (tab === 'invoices') loadInvoices() }
+function renderTasks(){const c=document.getElementById('taskList');c.innerHTML='';let f=tasks;if(currentTaskFilter==='active')f=tasks.filter(t=>!t.completed);else if(currentTaskFilter==='completed')f=tasks.filter(t=>t.completed);else if(currentTaskFilter==='Josua'||currentTaskFilter==='Reino')f=tasks.filter(t=>t.assignee===currentTaskFilter);f=f.filter(t=>t&&t.id);f.sort((a,b)=>{if(a.completed!==b.completed)return a.completed?1:-1;const pa=parseInt(a.priority)||4,pb=parseInt(b.priority)||4;if(pa!==pb)return pa-pb;return(b.created?new Date(b.created):new Date(0))-(a.created?new Date(a.created):new Date(0))});if(!f.length){c.innerHTML='<div class="empty-state"><div class="empty-state-icon">📋</div><div>No tasks found</div></div>';return}const tags={callout:'tag-callout',office:'tag-office',stock:'tag-stock',urgent:'tag-urgent'};f.forEach(t=>{const d=document.createElement('div');d.className=`task-item ${t.completed?'completed':''}`;d.id=`task-${t.id}`;d.innerHTML=`<div class="task-checkbox" onclick="event.stopPropagation();toggleTask('${t.id}')"></div><div class="priority-${t.priority} task-priority"></div><div class="task-content"><div class="task-text">${escapeHtml(t.text)}</div><div class="task-meta"><span class="task-tag ${tags[t.category]||'tag-office'}">${t.category}</span><span class="task-assignee">👤 ${t.assignee}</span></div></div><div class="task-delete" onclick="event.stopPropagation();deleteTask('${t.id}')">🗑️</div>`;c.appendChild(d)})}
+function toggleTask(id){const t=tasks.find(x=>x.id===id);if(!t)return;const nc=!t.completed;safeUpdate('tasks/'+id,{completed:nc,completedAt:nc?new Date().toISOString():null}).then(()=>{const el=document.getElementById(`task-${id}`);if(el&&currentTaskFilter!=='all'){el.classList.add('removing');setTimeout(()=>el.style.display='none',300)}}).catch(()=>{})}
+function deleteTask(id){const el=document.getElementById(`task-${id}`);if(el){el.classList.add('removing');setTimeout(()=>safeDelete('tasks/'+id).catch(()=>{}),300)}else safeDelete('tasks/'+id).catch(()=>{})}
+function filterTasks(f,btn){currentTaskFilter=f;document.querySelectorAll('.task-filter-btn').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderTasks()}
 
-        function calculateTotals() { let ct = 0; tenders.forEach((t, i) => { const q = parseInt(document.getElementById(`tender-${i}`).value) || 0; const s = q * t.value; ct += s; document.getElementById(`value-${i}`).textContent = `R${s.toFixed(2)}` }); const card = parseFloat(document.getElementById('cardTotal').value) || 0; document.getElementById('cashTotal').textContent = `R${ct.toFixed(2)}`; document.getElementById('cardDisplay').textContent = `R${card.toFixed(2)}`; document.getElementById('grandTotal').textContent = `R${(ct + card).toFixed(2)}` }
+// ===== STOCK =====
+function renderStock(){const c=document.getElementById('stockList');if(!stockItems.length){c.innerHTML='<div class="empty-state" style="padding:20px"><div class="empty-state-icon">📦</div><div>No stock items yet</div><div style="font-size:13px;margin-top:6px">Add items like thermal rolls, cables, parts...</div></div>';return}c.innerHTML=stockItems.map(s=>{const isLow=s.qty<=s.min;return`<div class="stock-item" id="stock-${s.id}"><div class="stock-info"><div class="stock-name">${escapeHtml(s.name)}</div><div class="stock-qty-label ${isLow?'low':''}">Min: ${s.min} • ${isLow?'⚠️ LOW STOCK':'In stock'}</div></div><div class="stock-controls"><button class="stock-btn minus" onclick="adjustStock('${s.id}',-1)">−</button><div class="stock-count ${isLow?'low':''}">${s.qty}</div><button class="stock-btn plus" onclick="adjustStock('${s.id}',1)">+</button><button class="stock-delete" onclick="removeStockItem('${s.id}')">🗑️</button></div></div>`}).join('')}
+function addStockItem(){const name=document.getElementById('stockNameInput').value.trim();const min=parseInt(document.getElementById('stockMinInput').value)||5;if(!name)return;const ref=db.ref('stock').push();safeWrite('stock/'+ref.key,{id:ref.key,name:name,qty:0,min:min}).then(()=>{document.getElementById('stockNameInput').value='';document.getElementById('stockMinInput').value='5'}).catch(()=>{})}
+function adjustStock(id,delta){const s=stockItems.find(x=>x.id===id);if(!s)return;const nq=Math.max(0,s.qty+delta);safeUpdate('stock/'+id,{qty:nq}).catch(()=>{})}
+function removeStockItem(id){const s=stockItems.find(x=>x.id===id);if(!s)return;if(confirm(`Remove "${s.name}" from stock?`)){const el=document.getElementById(`stock-${id}`);if(el){el.style.opacity='0';el.style.transform='translateX(100%)';el.style.transition='all .2s';setTimeout(()=>safeDelete('stock/'+id).catch(()=>{}),200)}else safeDelete('stock/'+id).catch(()=>{})}}
 
-        function addTask() { const txt = document.getElementById('taskInput').value.trim(); if (!txt) return; const ref = db.ref('tasks').push(); const task = { id: ref.key, text: txt, category: document.getElementById('taskCategory').value, assignee: document.getElementById('taskAssignee').value, priority: parseInt(document.getElementById('taskPriority').value) || 3, completed: false, created: new Date().toISOString() }; safeWrite('tasks/' + ref.key, task).then(() => document.getElementById('taskInput').value = '').catch(() => { }) }
+// ===== UTILITIES =====
+function renderUtilities(){const g=document.getElementById('utilityGrid');if(!utilities.length){g.innerHTML='<div class="empty-state" style="padding:20px"><div>Loading...</div></div>';return}g.innerHTML=utilities.map(u=>`<div class="utility-card ${u.status}" onclick="cycleUtilityStatus('${u.id}')"><div class="utility-icon">${u.icon}</div><div class="utility-name">${escapeHtml(u.name)}</div><div class="utility-status">${u.status.toUpperCase()}</div><div class="utility-last">${u.lastCheck?'Checked '+new Date(u.lastCheck).toLocaleDateString('en-ZA')+' by '+escapeHtml(u.lastBy):'Never checked'}</div></div>`).join('');const h=document.getElementById('utilityHistory');const hi=utilities.filter(u=>u.lastCheck).sort((a,b)=>new Date(b.lastCheck)-new Date(a.lastCheck));if(!hi.length){h.innerHTML='<div class="empty-state" style="padding:20px"><div style="font-size:24px">📭</div><div style="font-size:14px">No history yet</div></div>'}else{h.innerHTML=hi.map(u=>`<div class="stock-item"><div class="stock-info"><div class="stock-name">${u.icon} ${escapeHtml(u.name)}</div><div class="stock-qty-label">Status: ${u.status.toUpperCase()} • ${escapeHtml(u.lastBy)}</div></div><div class="stock-count" style="font-size:12px;color:var(--text-light)">${new Date(u.lastCheck).toLocaleDateString('en-ZA')}</div></div>`).join('')}}
+function cycleUtilityStatus(id){const u=utilities.find(x=>x.id===id);if(!u)return;const c={ok:'low',low:'critical',critical:'ok'};safeUpdate('utilities/'+id,{status:c[u.status]||'ok',lastCheck:new Date().toISOString(),lastBy:document.getElementById('techName').value||'Staff'}).catch(()=>{})}
 
-        function renderTasks() { const c = document.getElementById('taskList'); c.innerHTML = ''; let f = tasks; if (currentTaskFilter === 'active') f = tasks.filter(t => !t.completed); else if (currentTaskFilter === 'completed') f = tasks.filter(t => t.completed); else if (currentTaskFilter === 'Josua' || currentTaskFilter === 'Reino') f = tasks.filter(t => t.assignee === currentTaskFilter); f = f.filter(t => t && t.id); f.sort((a, b) => { if (a.completed !== b.completed) return a.completed ? 1 : -1; const pa = parseInt(a.priority) || 4, pb = parseInt(b.priority) || 4; if (pa !== pb) return pa - pb; return (b.created ? new Date(b.created) : new Date(0)) - (a.created ? new Date(a.created) : new Date(0)) }); if (!f.length) { c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div>No tasks found</div></div>'; return } const tags = { callout: 'tag-callout', office: 'tag-office', stock: 'tag-stock', urgent: 'tag-urgent' }; f.forEach(t => { const d = document.createElement('div'); d.className = `task-item ${t.completed ? 'completed' : ''}`; d.id = `task-${t.id}`; d.innerHTML = `<div class="task-checkbox" onclick="event.stopPropagation();toggleTask('${t.id}')"></div><div class="priority-${t.priority} task-priority"></div><div class="task-content"><div class="task-text">${escapeHtml(t.text)}</div><div class="task-meta"><span class="task-tag ${tags[t.category] || 'tag-office'}">${t.category}</span><span class="task-assignee">👤 ${t.assignee}</span></div></div><div class="task-delete" onclick="event.stopPropagation();deleteTask('${t.id}')">🗑️</div>`; c.appendChild(d) }) }
+// ===== INVOICES =====
+function updateInvoiceStatus(s,m){const el=document.getElementById('invoiceSyncStatus');el.className='sheet-sync-status';if(s==='syncing')el.classList.add('syncing');else if(s==='error')el.classList.add('error');el.innerHTML=`<span>${s==='syncing'?'⏳':s==='error'?'❌':'✅'}</span> ${m}`}
+async function loadInvoices(){updateInvoiceStatus('syncing','Loading invoices...');try{const r=await fetch(GAS_URL+'?action=get');const d=await r.json();if(d.error)throw new Error(d.error);invoices=Array.isArray(d)?d:[];renderInvoices();updateInvoiceStatus('ok',`Loaded ${invoices.length} invoice(s)`)}catch(e){updateInvoiceStatus('error','Failed: '+e.message);invoices=[];renderInvoices()}}
 
-        function toggleTask(id) { const t = tasks.find(x => x.id === id); if (!t) return; const nc = !t.completed; safeUpdate('tasks/' + id, { completed: nc, completedAt: nc ? new Date().toISOString() : null }).then(() => { const el = document.getElementById(`task-${id}`); if (el && currentTaskFilter !== 'all') { el.classList.add('removing'); setTimeout(() => el.style.display = 'none', 300) } }).catch(() => { }) }
-        function deleteTask(id) { const el = document.getElementById(`task-${id}`); if (el) { el.classList.add('removing'); setTimeout(() => safeDelete('tasks/' + id).catch(() => { }), 300) } else safeDelete('tasks/' + id).catch(() => { }) }
-        function filterTasks(f, btn) { currentTaskFilter = f; document.querySelectorAll('.task-filter-btn').forEach(b => b.classList.remove('active')); if (btn) btn.classList.add('active'); renderTasks() }
+async function saveInvoice(e){e.preventDefault();const name=document.getElementById('invName').value.trim(),surname=document.getElementById('invSurname').value.trim(),phone=document.getElementById('invPhone').value.trim(),job=document.getElementById('invJob').value.trim(),amount=parseFloat(document.getElementById('invAmount').value)||0,email=document.getElementById('invEmail').value.trim(),fi=document.getElementById('invFile');if(!name||!surname||!phone||!job||amount<=0){alert('Fill in all fields');return}updateInvoiceStatus('syncing','Saving...');let fileUrl='';if(fi.files&&fi.files[0]){try{updateInvoiceStatus('syncing','Uploading file...');const file=fi.files[0],CN='dpij51adw',UP='invoices_unsigned';let rt='image';const fn=file.name.toLowerCase();if(fn.endsWith('.pdf'))rt='image';else if(!file.type.includes('image')&&!fn.match(/\.(jpg|jpeg|png|gif|webp|svg)$/))rt='raw';const fd=new FormData();fd.append('file',file);fd.append('upload_preset',UP);const cr=await fetch(`https://api.cloudinary.com/v1_1/${CN}/${rt}/upload`,{method:'POST',body:fd});const cd=await cr.json();if(cd.secure_url)fileUrl=cd.secure_url;else alert('Upload failed: '+(cd.error?.message||JSON.stringify(cd)))}catch(ue){alert('Upload failed: '+ue.message)}}const payload={action:'add',name,surname,phone,job,amount,paid:'N',email,fileUrl};try{const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain;charset=utf-8'}});const res=await r.json();if(!res.success)throw new Error(res.error||'Server error');document.getElementById('invoiceForm').reset();document.getElementById('invFilePreview').textContent='';updateInvoiceStatus('ok','Invoice saved!');setTimeout(()=>loadInvoices(),800)}catch(e){updateInvoiceStatus('error','Failed: '+e.message);alert('Failed: '+e.message)}}
 
-        function renderUtilities() { const g = document.getElementById('utilityGrid'); if (!utilities.length) { g.innerHTML = '<div class="empty-state" style="padding:20px"><div>Loading...</div></div>'; return } g.innerHTML = utilities.map(u => `<div class="utility-card ${u.status}" onclick="cycleUtilityStatus('${u.id}')"><div class="utility-icon">${u.icon}</div><div class="utility-name">${escapeHtml(u.name)}</div><div class="utility-status">${u.status.toUpperCase()}</div><div class="utility-last">${u.lastCheck ? 'Checked ' + new Date(u.lastCheck).toLocaleDateString('en-ZA') + ' by ' + escapeHtml(u.lastBy) : 'Never checked'}</div></div>`).join(''); const h = document.getElementById('utilityHistory'); const hi = utilities.filter(u => u.lastCheck).sort((a, b) => new Date(b.lastCheck) - new Date(a.lastCheck)); if (!hi.length) { h.innerHTML = '<div class="empty-state" style="padding:20px"><div style="font-size:24px">📭</div><div style="font-size:14px">No history yet</div></div>' } else { h.innerHTML = hi.map(u => `<div class="stock-item"><div class="stock-info"><div class="stock-name">${u.icon} ${escapeHtml(u.name)}</div><div class="stock-qty">Status: ${u.status.toUpperCase()} • ${escapeHtml(u.lastBy)}</div></div><div class="stock-count" style="font-size:12px;color:var(--text-light)">${new Date(u.lastCheck).toLocaleDateString('en-ZA')}</div></div>`).join('') } }
-        function cycleUtilityStatus(id) { const u = utilities.find(x => x.id === id); if (!u) return; const c = { ok: 'low', low: 'critical', critical: 'ok' }; safeUpdate('utilities/' + id, { status: c[u.status] || 'ok', lastCheck: new Date().toISOString(), lastBy: document.getElementById('techName').value || 'Staff' }).catch(() => { }) }
+async function markInvoicePaid(ri){if(!confirm('Mark paid?'))return;updateInvoiceStatus('syncing','Updating...');try{const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'update',rowIndex:ri,paid:true}),headers:{'Content-Type':'text/plain;charset=utf-8'}});const res=await r.json();if(!res.success)throw new Error(res.error);updateInvoiceStatus('ok','Marked paid!');setTimeout(()=>loadInvoices(),800)}catch(e){updateInvoiceStatus('error','Failed: '+e.message);alert('Failed: '+e.message)}}
+async function deleteInvoice(ri){if(!confirm('Delete this invoice?'))return;updateInvoiceStatus('syncing','Deleting...');try{const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'delete',rowIndex:ri}),headers:{'Content-Type':'text/plain;charset=utf-8'}});const res=await r.json();if(!res.success)throw new Error(res.error);updateInvoiceStatus('ok','Deleted!');setTimeout(()=>loadInvoices(),800)}catch(e){updateInvoiceStatus('error','Failed: '+e.message);alert('Failed: '+e.message)}}
 
-        function updateInvoiceStatus(s, m) { const el = document.getElementById('invoiceSyncStatus'); el.className = 'sheet-sync-status'; if (s === 'syncing') el.classList.add('syncing'); else if (s === 'error') el.classList.add('error'); el.innerHTML = `<span>${s === 'syncing' ? '⏳' : s === 'error' ? '❌' : '✅'}</span> ${m}` }
+function renderInvoices(){const c=document.getElementById('invoicesList');let f=invoices;if(currentInvoiceFilter==='unpaid')f=invoices.filter(i=>!i.paid);else if(currentInvoiceFilter==='paid')f=invoices.filter(i=>i.paid);else if(currentInvoiceFilter==='overdue')f=invoices.filter(i=>!i.paid&&i.daysOutstanding>=30);if(!f.length){c.innerHTML='<div class="empty-state"><div class="empty-state-icon">🧾</div><div>No invoices found</div></div>';return}c.innerHTML=f.map(i=>{const od=!i.paid&&i.daysOutstanding>=30,p=i.paid;return`<div class="invoice-item ${p?'paid':''} ${od?'overdue':''}"><div class="invoice-header"><span class="invoice-date">${i.date||'No date'}</span><span class="invoice-status ${p?'status-paid':od?'status-overdue':'status-unpaid'}">${p?'PAID':od?'🔴 OVERDUE':'UNPAID'}</span></div>${od?'<div class="invoice-badge badge-reminder">📧 Reminder sent</div>':''}<div class="invoice-client">${escapeHtml(i.name)} ${escapeHtml(i.surname)}</div><div class="invoice-phone">📞 ${escapeHtml(i.phone)}</div><div class="invoice-job">${escapeHtml(i.job)}</div><div class="invoice-footer"><div class="invoice-amount ${p?'paid':''}">R${i.amount.toFixed(2)}</div><div class="invoice-days ${od?'overdue':''}">${p?'✓ Settled':i.daysOutstanding+' days'}</div></div>${i.fileUrl?`<div style="margin-top:8px"><a href="${escapeHtml(i.fileUrl)}" target="_blank" style="font-size:13px;color:var(--primary-light);text-decoration:none">📎 View Invoice</a></div>`:''}${i.email?`<div style="font-size:12px;color:var(--text-light);margin-top:4px">📧 ${escapeHtml(i.email)}</div>`:''}<div class="invoice-actions">${!p?`<button class="action-btn" style="background:#dcfce7;color:var(--success)" onclick="markInvoicePaid(${i.rowIndex})">✓ Mark Paid</button>`:''}<button class="action-btn" style="background:#fee2e2;color:var(--danger)" onclick="deleteInvoice(${i.rowIndex})">🗑️ Delete</button></div></div>`}).join('')}
+function filterInvoices(f,btn){currentInvoiceFilter=f;document.querySelectorAll('#invoices .filter-btn').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderInvoices()}
 
-        async function loadInvoices() { updateInvoiceStatus('syncing', 'Loading invoices...'); try { const r = await fetch(GAS_URL + '?action=get'); const d = await r.json(); if (d.error) throw new Error(d.error); invoices = Array.isArray(d) ? d : []; renderInvoices(); updateInvoiceStatus('ok', `Loaded ${invoices.length} invoice(s)`) } catch (e) { updateInvoiceStatus('error', 'Failed: ' + e.message); invoices = []; renderInvoices() } }
+// ===== BOOKINGS =====
+function saveBooking(e){e.preventDefault();const ref=db.ref('bookings').push();const b={id:ref.key,date:new Date().toISOString(),custName:document.getElementById('custName').value.trim(),custPhone:document.getElementById('custPhone').value.trim(),deviceModel:document.getElementById('deviceModel').value.trim(),serialNum:document.getElementById('serialNum').value.trim(),devicePass:document.getElementById('devicePass').value.trim(),jobDesc:document.getElementById('jobDesc').value.trim(),quote:parseFloat(document.getElementById('quoteAmount').value)||0,deposit:parseFloat(document.getElementById('depositAmount').value)||0,status:document.getElementById('jobStatus').value};safeWrite('bookings/'+ref.key,b).then(()=>{document.getElementById('bookingForm').reset();alert('Job card saved!');switchTab('bookings',document.querySelectorAll('.tab-btn')[1])}).catch(()=>alert('Failed to save'))}
+function renderBookings(){const c=document.getElementById('bookingsList');let f=currentFilter==='all'?bookings:bookings.filter(b=>b.status===currentFilter);if(!f.length){c.innerHTML='<div class="empty-state"><div class="empty-state-icon">📭</div><div>No jobs found</div></div>';return}c.innerHTML=f.map(b=>`<div class="booking-item ${b.status}" id="booking-${b.id}" onclick="openEdit('${b.id}')"><div class="booking-header"><span class="booking-id">#${String(b.id).slice(-4)}</span><span class="booking-status status-${b.status}">${b.status}</span></div><div class="booking-device">${escapeHtml(b.deviceModel)}</div><div class="booking-customer">${escapeHtml(b.custName)} • ${escapeHtml(b.custPhone)}</div><div class="booking-desc">${escapeHtml(b.jobDesc)}</div><div class="booking-footer"><div class="booking-price">R${b.quote.toFixed(2)}</div><div class="booking-actions"><button class="action-btn" style="background:var(--bg);color:var(--text)" onclick="event.stopPropagation();changeStatus('${b.id}','todo')">To Do</button><button class="action-btn" style="background:#dbeafe;color:var(--primary)" onclick="event.stopPropagation();changeStatus('${b.id}','pending')">Pending</button><button class="action-btn" style="background:#dcfce7;color:var(--success)" onclick="event.stopPropagation();markDone('${b.id}')">Done</button></div></div></div>`).join('')}
+function filterBookings(s,btn){currentFilter=s;document.querySelectorAll('#bookings .filter-btn').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderBookings()}
+function changeStatus(id,s){safeUpdate('bookings/'+id,{status:s}).catch(()=>{})}
+function markDone(id){safeUpdate('bookings/'+id,{status:'completed'}).then(()=>{const el=document.getElementById(`booking-${id}`);if(el&&currentFilter!=='completed'){el.classList.add('removing');setTimeout(()=>el.style.display='none',300)}}).catch(()=>{})}
+function openEdit(id){const b=bookings.find(x=>x.id===id);if(!b)return;document.getElementById('editId').value=id;document.getElementById('editCustName').value=b.custName;document.getElementById('editDevice').value=b.deviceModel;document.getElementById('editDesc').value=b.jobDesc;document.getElementById('editQuote').value=b.quote;document.getElementById('editDeposit').value=b.deposit;document.getElementById('editStatus').value=b.status;document.getElementById('editModal').classList.add('active')}
+function closeModal(){document.getElementById('editModal').classList.remove('active')}
+function updateBooking(e){e.preventDefault();const id=document.getElementById('editId').value;safeUpdate('bookings/'+id,{custName:document.getElementById('editCustName').value.trim(),deviceModel:document.getElementById('editDevice').value.trim(),jobDesc:document.getElementById('editDesc').value.trim(),quote:parseFloat(document.getElementById('editQuote').value)||0,deposit:parseFloat(document.getElementById('editDeposit').value)||0,status:document.getElementById('editStatus').value}).then(()=>closeModal()).catch(()=>alert('Update failed'))}
+function deleteBooking(){const id=document.getElementById('editId').value;if(confirm('Delete this job?'))safeDelete('bookings/'+id).then(()=>closeModal()).catch(()=>alert('Delete failed'))}
 
-        async function saveInvoice(e) { e.preventDefault(); const name = document.getElementById('invName').value.trim(), surname = document.getElementById('invSurname').value.trim(), phone = document.getElementById('invPhone').value.trim(), job = document.getElementById('invJob').value.trim(), amount = parseFloat(document.getElementById('invAmount').value) || 0, email = document.getElementById('invEmail').value.trim(), fi = document.getElementById('invFile'); if (!name || !surname || !phone || !job || amount <= 0) { alert('Fill in all fields'); return } updateInvoiceStatus('syncing', 'Saving...'); let fileUrl = ''; if (fi.files && fi.files[0]) { try { updateInvoiceStatus('syncing', 'Uploading file...'); const file = fi.files[0], CN = 'dpij51adw', UP = 'invoices_unsigned'; let rt = 'image'; const fn = file.name.toLowerCase(); if (fn.endsWith('.pdf')) rt = 'image'; else if (!file.type.includes('image') && !fn.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) rt = 'raw'; const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', UP); fd.append('type', 'upload'); const cr = await fetch(`https://api.cloudinary.com/v1_1/${CN}/${rt}/upload`, { method: 'POST', body: fd }); const cd = await cr.json(); if (cd.secure_url) fileUrl = cd.secure_url; else alert('Upload failed: ' + (cd.error?.message || JSON.stringify(cd))) } catch (ue) { alert('Upload failed: ' + ue.message) } } const payload = { action: 'add', name, surname, phone, job, amount, paid: 'N', email, fileUrl }; try { const r = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); const res = await r.json(); if (!res.success) throw new Error(res.error || 'Server error'); document.getElementById('invoiceForm').reset(); document.getElementById('invFilePreview').textContent = ''; updateInvoiceStatus('ok', 'Invoice saved!'); setTimeout(() => loadInvoices(), 800) } catch (e) { updateInvoiceStatus('error', 'Failed: ' + e.message); alert('Failed: ' + e.message) } }
+// ===== EXPORT =====
+function exportAll(){const tn=document.getElementById('techName').value||'Technician',now=new Date(),fn=`${now.getDate()} ${now.toLocaleDateString('en-ZA',{month:'long'})}.xlsx`,ed=`${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`,ts=new Date();ts.setHours(0,0,0,0);const wb=XLSX.utils.book_new();let cd=[[tn+' Cash up','','',ed],[],['Tender','Qty','Value']],ct=0;tenders.forEach((t,i)=>{const q=parseInt(document.getElementById(`tender-${i}`).value)||0,v=q*t.value;ct+=v;cd.push([t.label,q,`R${v.toFixed(2)}`])});const card=parseFloat(document.getElementById('cardTotal').value)||0;cd.push([],[],[],[],['Cash',`R${ct.toFixed(2)}`],['Card',`R${card.toFixed(2)}`]);const w1=XLSX.utils.aoa_to_sheet(cd);w1['!cols']=[{wch:12},{wch:10},{wch:12},{wch:14}];XLSX.utils.book_append_sheet(wb,w1,'Cashup');let jd=[['Date','Job #','Customer','Contact','Device','Serial','Password','Description','Quote','Deposit','Balance','Status']];bookings.forEach(b=>{const d=new Date(b.date).toLocaleDateString('en-ZA'),bl=b.quote-b.deposit;jd.push([d,`#${String(b.id).slice(-4)}`,b.custName,b.custPhone,b.deviceModel,b.serialNum||'',b.devicePass||'',b.jobDesc,`R${b.quote.toFixed(2)}`,`R${b.deposit.toFixed(2)}`,`R${bl.toFixed(2)}`,b.status.toUpperCase()])});const tq=bookings.reduce((s,b)=>s+b.quote,0),td=bookings.reduce((s,b)=>s+b.deposit,0);jd.push([],['TOTALS','','','','','','','',`R${tq.toFixed(2)}`,`R${td.toFixed(2)}`,`R${(tq-td).toFixed(2)}`,'']);const w2=XLSX.utils.aoa_to_sheet(jd);w2['!cols']=[{wch:12},{wch:8},{wch:18},{wch:14},{wch:20},{wch:14},{wch:14},{wch:30},{wch:10},{wch:10},{wch:10},{wch:12}];XLSX.utils.book_append_sheet(wb,w2,'Job Cards');let ttd=[['Task','Category','Assignee','Priority','Status','Created']];const tt=tasks.filter(t=>{if(!t.completed)return true;if(!t.completedAt)return false;return new Date(t.completedAt)>=ts});tt.forEach(t=>ttd.push([t.text,t.category,t.assignee,`P${t.priority}`,t.completed?'Completed':'Active',new Date(t.created).toLocaleDateString('en-ZA')]));ttd.push([],['Active',tt.filter(t=>!t.completed).length],['Completed Today',tt.filter(t=>t.completed).length]);const w3=XLSX.utils.aoa_to_sheet(ttd);w3['!cols']=[{wch:30},{wch:12},{wch:12},{wch:10},{wch:12},{wch:12}];XLSX.utils.book_append_sheet(wb,w3,'Tasks');let sd=[['Item','Quantity','Min Level','Status']];stockItems.forEach(s=>sd.push([s.name,s.qty,s.min,s.qty<=s.min?'LOW - REORDER':'OK']));const w4=XLSX.utils.aoa_to_sheet(sd);w4['!cols']=[{wch:24},{wch:10},{wch:10},{wch:14}];XLSX.utils.book_append_sheet(wb,w4,'Stock');let ud=[['Type','Item','Status','Last Checked','By']];utilities.forEach(u=>ud.push(['Utility',u.name,u.status.toUpperCase(),u.lastCheck?new Date(u.lastCheck).toLocaleDateString('en-ZA'):'Never',u.lastBy||'-']));const w5=XLSX.utils.aoa_to_sheet(ud);w5['!cols']=[{wch:10},{wch:20},{wch:12},{wch:14},{wch:14}];XLSX.utils.book_append_sheet(wb,w5,'Utilities');XLSX.writeFile(wb,fn)}
 
-        async function markInvoicePaid(ri) { if (!confirm('Mark paid?')) return; updateInvoiceStatus('syncing', 'Updating...'); try { const r = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'update', rowIndex: ri, paid: true }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); const res = await r.json(); if (!res.success) throw new Error(res.error); updateInvoiceStatus('ok', 'Marked paid!'); setTimeout(() => loadInvoices(), 800) } catch (e) { updateInvoiceStatus('error', 'Failed: ' + e.message); alert('Failed: ' + e.message) } }
-
-        async function deleteInvoice(ri) { if (!confirm('Delete this invoice?')) return; updateInvoiceStatus('syncing', 'Deleting...'); try { const r = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', rowIndex: ri }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); const res = await r.json(); if (!res.success) throw new Error(res.error); updateInvoiceStatus('ok', 'Deleted!'); setTimeout(() => loadInvoices(), 800) } catch (e) { updateInvoiceStatus('error', 'Failed: ' + e.message); alert('Failed: ' + e.message) } }
-
-        function renderInvoices() { const c = document.getElementById('invoicesList'); let f = invoices; if (currentInvoiceFilter === 'unpaid') f = invoices.filter(i => !i.paid); else if (currentInvoiceFilter === 'paid') f = invoices.filter(i => i.paid); else if (currentInvoiceFilter === 'overdue') f = invoices.filter(i => !i.paid && i.daysOutstanding >= 30); if (!f.length) { c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div><div>No invoices found</div></div>'; return } c.innerHTML = f.map(i => { const od = !i.paid && i.daysOutstanding >= 30, p = i.paid; return `<div class="invoice-item ${p ? 'paid' : ''} ${od ? 'overdue' : ''}"><div class="invoice-header"><span class="invoice-date">${i.date || 'No date'}</span><span class="invoice-status ${p ? 'status-paid' : od ? 'status-overdue' : 'status-unpaid'}">${p ? 'PAID' : od ? '🔴 OVERDUE' : 'UNPAID'}</span></div>${od ? '<div class="invoice-badge badge-reminder">📧 Reminder sent</div>' : ''}<div class="invoice-client">${escapeHtml(i.name)} ${escapeHtml(i.surname)}</div><div class="invoice-phone">📞 ${escapeHtml(i.phone)}</div><div class="invoice-job">${escapeHtml(i.job)}</div><div class="invoice-footer"><div class="invoice-amount ${p ? 'paid' : ''}">R${i.amount.toFixed(2)}</div><div class="invoice-days ${od ? 'overdue' : ''}">${p ? '✓ Settled' : i.daysOutstanding + ' days'}</div></div>${i.fileUrl ? `<div style="margin-top:8px"><a href="${escapeHtml(i.fileUrl)}" target="_blank" style="font-size:13px;color:var(--primary-light);text-decoration:none">📎 View Invoice</a></div>` : ''}${i.email ? `<div style="font-size:12px;color:var(--text-light);margin-top:4px">📧 ${escapeHtml(i.email)}</div>` : ''}<div class="invoice-actions">${!p ? `<button class="action-btn" style="background:#dcfce7;color:var(--success)" onclick="markInvoicePaid(${i.rowIndex})">✓ Mark Paid</button>` : ''}<button class="action-btn" style="background:#fee2e2;color:var(--danger)" onclick="deleteInvoice(${i.rowIndex})">🗑️ Delete</button></div></div>` }).join('') }
-
-        function filterInvoices(f, btn) { currentInvoiceFilter = f; document.querySelectorAll('#invoices .filter-btn').forEach(b => b.classList.remove('active')); if (btn) btn.classList.add('active'); renderInvoices() }
-
-        function saveBooking(e) { e.preventDefault(); const ref = db.ref('bookings').push(); const b = { id: ref.key, date: new Date().toISOString(), custName: document.getElementById('custName').value.trim(), custPhone: document.getElementById('custPhone').value.trim(), deviceModel: document.getElementById('deviceModel').value.trim(), serialNum: document.getElementById('serialNum').value.trim(), devicePass: document.getElementById('devicePass').value.trim(), jobDesc: document.getElementById('jobDesc').value.trim(), quote: parseFloat(document.getElementById('quoteAmount').value) || 0, deposit: parseFloat(document.getElementById('depositAmount').value) || 0, status: document.getElementById('jobStatus').value }; safeWrite('bookings/' + ref.key, b).then(() => { document.getElementById('bookingForm').reset(); alert('Job card saved!'); switchTab('bookings', document.querySelectorAll('.tab-btn')[1]) }).catch(() => alert('Failed to save')) }
-
-        function renderBookings() { const c = document.getElementById('bookingsList'); let f = currentFilter === 'all' ? bookings : bookings.filter(b => b.status === currentFilter); if (!f.length) { c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>No jobs found</div></div>'; return } c.innerHTML = f.map(b => `<div class="booking-item ${b.status}" id="booking-${b.id}" onclick="openEdit('${b.id}')"><div class="booking-header"><span class="booking-id">#${String(b.id).slice(-4)}</span><span class="booking-status status-${b.status}">${b.status}</span></div><div class="booking-device">${escapeHtml(b.deviceModel)}</div><div class="booking-customer">${escapeHtml(b.custName)} • ${escapeHtml(b.custPhone)}</div><div class="booking-desc">${escapeHtml(b.jobDesc)}</div><div class="booking-footer"><div class="booking-price">R${b.quote.toFixed(2)}</div><div class="booking-actions"><button class="action-btn" style="background:var(--bg);color:var(--text)" onclick="event.stopPropagation();changeStatus('${b.id}','todo')">To Do</button><button class="action-btn" style="background:#dbeafe;color:var(--primary)" onclick="event.stopPropagation();changeStatus('${b.id}','pending')">Pending</button><button class="action-btn" style="background:#dcfce7;color:var(--success)" onclick="event.stopPropagation();markDone('${b.id}')">Done</button></div></div></div>`).join('') }
-
-        function filterBookings(s, btn) { currentFilter = s; document.querySelectorAll('#bookings .filter-btn').forEach(b => b.classList.remove('active')); if (btn) btn.classList.add('active'); renderBookings() }
-        function changeStatus(id, s) { safeUpdate('bookings/' + id, { status: s }).catch(() => { }) }
-        function markDone(id) { safeUpdate('bookings/' + id, { status: 'completed' }).then(() => { const el = document.getElementById(`booking-${id}`); if (el && currentFilter !== 'completed') { el.classList.add('removing'); setTimeout(() => el.style.display = 'none', 300) } }).catch(() => { }) }
-
-        function openEdit(id) { const b = bookings.find(x => x.id === id); if (!b) return; document.getElementById('editId').value = id; document.getElementById('editCustName').value = b.custName; document.getElementById('editDevice').value = b.deviceModel; document.getElementById('editDesc').value = b.jobDesc; document.getElementById('editQuote').value = b.quote; document.getElementById('editDeposit').value = b.deposit; document.getElementById('editStatus').value = b.status; document.getElementById('editModal').classList.add('active') }
-        function closeModal() { document.getElementById('editModal').classList.remove('active') }
-        function updateBooking(e) { e.preventDefault(); const id = document.getElementById('editId').value; safeUpdate('bookings/' + id, { custName: document.getElementById('editCustName').value.trim(), deviceModel: document.getElementById('editDevice').value.trim(), jobDesc: document.getElementById('editDesc').value.trim(), quote: parseFloat(document.getElementById('editQuote').value) || 0, deposit: parseFloat(document.getElementById('editDeposit').value) || 0, status: document.getElementById('editStatus').value }).then(() => closeModal()).catch(() => alert('Update failed')) }
-        function deleteBooking() { const id = document.getElementById('editId').value; if (confirm('Delete this job?')) safeDelete('bookings/' + id).then(() => closeModal()).catch(() => alert('Delete failed')) }
-
-        function exportAll() { const tn = document.getElementById('techName').value || 'Technician', now = new Date(), fn = `${now.getDate()} ${now.toLocaleDateString('en-ZA', { month: 'long' })}.xlsx`, ed = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`, ts = new Date(); ts.setHours(0, 0, 0, 0); const wb = XLSX.utils.book_new(); let cd = [[tn + ' Cash up', '', '', ed], [], ['Tender', 'Qty', 'Value']], ct = 0; tenders.forEach((t, i) => { const q = parseInt(document.getElementById(`tender-${i}`).value) || 0, v = q * t.value; ct += v; cd.push([t.label, q, `R${v.toFixed(2)}`]) }); const card = parseFloat(document.getElementById('cardTotal').value) || 0; cd.push([], [], [], [], ['Cash', `R${ct.toFixed(2)}`], ['Card', `R${card.toFixed(2)}`]); const w1 = XLSX.utils.aoa_to_sheet(cd); w1['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 14 }]; XLSX.utils.book_append_sheet(wb, w1, 'Cashup'); let jd = [['Date', 'Job #', 'Customer', 'Contact', 'Device', 'Serial', 'Password', 'Description', 'Quote', 'Deposit', 'Balance', 'Status']]; bookings.forEach(b => { const d = new Date(b.date).toLocaleDateString('en-ZA'), bl = b.quote - b.deposit; jd.push([d, `#${String(b.id).slice(-4)}`, b.custName, b.custPhone, b.deviceModel, b.serialNum || '', b.devicePass || '', b.jobDesc, `R${b.quote.toFixed(2)}`, `R${b.deposit.toFixed(2)}`, `R${bl.toFixed(2)}`, b.status.toUpperCase()]) }); const tq = bookings.reduce((s, b) => s + b.quote, 0), td = bookings.reduce((s, b) => s + b.deposit, 0); jd.push([], ['TOTALS', '', '', '', '', '', '', '', `R${tq.toFixed(2)}`, `R${td.toFixed(2)}`, `R${(tq - td).toFixed(2)}`, '']); const w2 = XLSX.utils.aoa_to_sheet(jd); w2['!cols'] = [{ wch: 12 }, { wch: 8 }, { wch: 18 }, { wch: 14 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 30 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }]; XLSX.utils.book_append_sheet(wb, w2, 'Job Cards'); let ttd = [['Task', 'Category', 'Assignee', 'Priority', 'Status', 'Created']]; const tt = tasks.filter(t => { if (!t.completed) return true; if (!t.completedAt) return false; return new Date(t.completedAt) >= ts }); tt.forEach(t => ttd.push([t.text, t.category, t.assignee, `P${t.priority}`, t.completed ? 'Completed' : 'Active', new Date(t.created).toLocaleDateString('en-ZA')])); ttd.push([], ['Active', tt.filter(t => !t.completed).length], ['Completed Today', tt.filter(t => t.completed).length]); const w3 = XLSX.utils.aoa_to_sheet(ttd); w3['!cols'] = [{ wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 12 }]; XLSX.utils.book_append_sheet(wb, w3, 'Tasks'); let ud = [['Type', 'Item', 'Status', 'Last Checked', 'By']]; utilities.forEach(u => ud.push(['Utility', u.name, u.status.toUpperCase(), u.lastCheck ? new Date(u.lastCheck).toLocaleDateString('en-ZA') : 'Never', u.lastBy || '-'])); const w4 = XLSX.utils.aoa_to_sheet(ud); w4['!cols'] = [{ wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 14 }]; XLSX.utils.book_append_sheet(wb, w4, 'Utilities'); XLSX.writeFile(wb, fn) }
-
-        function escapeHtml(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML }
-        document.getElementById('editModal').addEventListener('click', function (e) { if (e.target === this) closeModal() });
-        init();
-    </script>
+function escapeHtml(t){if(!t)return'';const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+document.getElementById('editModal').addEventListener('click',function(e){if(e.target===this)closeModal()});
+init();
+</script>
 </body>
-
 </html>
